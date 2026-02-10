@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="ReporterSuite" verbose="1" parallel="false" thread-count="1">
+  <listeners>
+    <listener class-name="com.example.reporting.ReporterListener" />
+  </listeners>
+  <test name="ExternalApps">
+    <parameter name="browser" value="chrome" />
+    <classes>
+      <class name="com.example.tests.SampleTests">
+        <methods>
+          <include name="successfulLoginShowsSecureArea"/>
+          <include name="invalidLoginShowsError"/>
+          <include name="checkboxCanBeToggled"/>
+          <include name="dropdownSelectsCorrectOption"/>
+          <include name="dynamicLoadingWaitsForElement"/>
+        </methods>
+      </class>
+    </classes>
+  </test>
+</suite>

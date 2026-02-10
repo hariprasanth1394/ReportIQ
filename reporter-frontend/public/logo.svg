@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="800" viewBox="0 0 2400 800">
+  <defs>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0A2540"/>
+      <stop offset="100%" stop-color="#3FA9F5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Logo Icon -->
+  <g transform="translate(200,200)">
+    <circle cx="200" cy="200" r="170" fill="none" stroke="url(#blueGradient)" stroke-width="28" stroke-dasharray="260 80"/>
+
+    <!-- Bar chart -->
+    <rect x="120" y="220" width="35" height="110" rx="10" fill="url(#blueGradient)"/>
+    <rect x="180" y="160" width="35" height="170" rx="10" fill="url(#blueGradient)"/>
+    <rect x="240" y="120" width="35" height="210" rx="10" fill="url(#blueGradient)"/>
+  </g>
+
+  <!-- Text -->
+  <text x="700" y="460"
+        font-family="Poppins, Arial, Helvetica, sans-serif"
+        font-size="200"
+        fill="url(#blueGradient)">
+    Report<tspan font-weight="700">IQ</tspan>
+  </text>
+</svg>
