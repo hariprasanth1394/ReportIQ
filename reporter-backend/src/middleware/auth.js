@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { usersStore, statuses } from '../store/usersStore.js';
 
-export function authenticate(req, res, next) {
+export async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) {
@@ -10,7 +10,7 @@ export function authenticate(req, res, next) {
   }
   try {
     const payload = jwt.verify(token, config.jwtSecret);
-    const user = usersStore.getById(payload.id);
+    const user = await usersStore.getUserById(payload.id);
     if (!user || user.status !== statuses.ACTIVE) {
       return res.status(401).json({ message: 'User is disabled or missing' });
     }

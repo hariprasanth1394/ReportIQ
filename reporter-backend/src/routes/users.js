@@ -6,8 +6,9 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), (_req, res) => {
-  return res.json(usersStore.listUsers());
+router.get('/', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), async (_req, res) => {
+  const users = await usersStore.getAllUsers();
+  return res.json(users);
 });
 
 router.post('/', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), async (req, res) => {
@@ -25,7 +26,7 @@ router.post('/', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), async (req, r
 
 router.patch('/:id/role', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), async (req, res) => {
   const { role } = req.body || {};
-  const user = usersStore.getById(req.params.id);
+  const user = await usersStore.getUserById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User not found' });
   if (user.role === roles.SUPER_ADMIN && req.user.role !== roles.SUPER_ADMIN) {
     return res.status(403).json({ message: 'Cannot modify Super Admin role' });
@@ -34,7 +35,7 @@ router.patch('/:id/role', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), asyn
     return res.status(403).json({ message: 'Cannot assign Super Admin role' });
   }
   try {
-    const updated = await usersStore.updateRole(user, role);
+    const updated = await usersStore.updateUserRole(user.id, role);
     return res.json(updated);
   } catch (err) {
     return res.status(400).json({ message: err.message });
@@ -43,7 +44,7 @@ router.patch('/:id/role', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), asyn
 
 router.patch('/:id/status', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), async (req, res) => {
   const { status } = req.body || {};
-  const user = usersStore.getById(req.params.id);
+  const user = await usersStore.getUserById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User not found' });
   if (user.role === roles.SUPER_ADMIN && req.user.role !== roles.SUPER_ADMIN) {
     return res.status(403).json({ message: 'Cannot modify Super Admin status' });
@@ -51,16 +52,16 @@ router.patch('/:id/status', authorizeRoles([roles.SUPER_ADMIN, roles.ADMIN]), as
   if (![statuses.ACTIVE, statuses.DISABLED].includes(status)) {
     return res.status(400).json({ message: 'Invalid status' });
   }
-  const updated = await usersStore.updateStatus(user, status);
+  const updated = await usersStore.updateUserStatus(user.id, status);
   return res.json(updated);
 });
 
 router.post('/:id/reset-password', authorizeRoles([roles.SUPER_ADMIN]), async (req, res) => {
   const { newPassword } = req.body || {};
-  const user = usersStore.getById(req.params.id);
+  const user = await usersStore.getUserById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User not found' });
   try {
-    const updated = await usersStore.resetPassword(user, newPassword);
+    const updated = await usersStore.resetPassword(user.id, newPassword);
     return res.json(updated);
   } catch (err) {
     return res.status(400).json({ message: err.message });
@@ -68,9 +69,9 @@ router.post('/:id/reset-password', authorizeRoles([roles.SUPER_ADMIN]), async (r
 });
 
 router.post('/:id/recovery-password', authorizeRoles([roles.SUPER_ADMIN]), async (req, res) => {
-  const user = usersStore.getById(req.params.id);
+  const user = await usersStore.getUserById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User not found' });
-  const tempPassword = await usersStore.generateRecoveryPassword(user);
+  const tempPassword = await usersStore.generateRecoveryPassword(user.id);
   return res.json({
     message: 'Temporary recovery password generated. Share securely with the user.',
     tempPassword,

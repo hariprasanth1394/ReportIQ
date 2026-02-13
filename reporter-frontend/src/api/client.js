@@ -6,6 +6,26 @@ export const api = axios.create({
   baseURL,
 });
 
+let onAuthErrorCallback = null;
+
+export function setAuthErrorHandler(callback) {
+  onAuthErrorCallback = callback;
+}
+
+// Interceptor to handle 401 errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      if (onAuthErrorCallback) {
+        onAuthErrorCallback();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export function setAuthToken(token) {
   if (token) {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;

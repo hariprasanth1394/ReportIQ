@@ -1,26 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="800" viewBox="0 0 2400 800">
+<svg width="320" height="90" viewBox="0 0 320 90" xmlns="http://www.w3.org/2000/svg">
+
   <defs>
-    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0A2540"/>
-      <stop offset="100%" stop-color="#3FA9F5"/>
+    <!-- Gradients for bars -->
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#29B6F6"></stop>
+      <stop offset="100%" stop-color="#0277BD"></stop>
+    </linearGradient>
+
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#66BB6A"></stop>
+      <stop offset="100%" stop-color="#2E7D32"></stop>
+    </linearGradient>
+
+    <linearGradient id="orangeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFA726"></stop>
+      <stop offset="100%" stop-color="#EF6C00"></stop>
     </linearGradient>
   </defs>
 
-  <!-- Logo Icon -->
-  <g transform="translate(200,200)">
-    <circle cx="200" cy="200" r="170" fill="none" stroke="url(#blueGradient)" stroke-width="28" stroke-dasharray="260 80"/>
-
-    <!-- Bar chart -->
-    <rect x="120" y="220" width="35" height="110" rx="10" fill="url(#blueGradient)"/>
-    <rect x="180" y="160" width="35" height="170" rx="10" fill="url(#blueGradient)"/>
-    <rect x="240" y="120" width="35" height="210" rx="10" fill="url(#blueGradient)"/>
-  </g>
+  <!-- Circular Arc -->
+  <circle cx="45" cy="45" r="35" stroke="#0D47A1" stroke-width="6" fill="none"></circle>
+  
+  <!-- Bar Chart -->
+  <rect x="30" y="45" width="10" height="20" fill="url(#blueGrad)" rx="2"></rect>
+  <rect x="44" y="35" width="10" height="30" fill="url(#greenGrad)" rx="2"></rect>
+  <rect x="58" y="25" width="10" height="40" fill="url(#orangeGrad)" rx="2"></rect>
 
   <!-- Text -->
-  <text x="700" y="460"
-        font-family="Poppins, Arial, Helvetica, sans-serif"
-        font-size="200"
-        fill="url(#blueGradient)">
-    Report<tspan font-weight="700">IQ</tspan>
+  <text x="100" y="58" font-family="Poppins, Segoe UI, sans-serif" font-size="38" font-weight="600" fill="#0D47A1">
+    Report<tspan fill="#29B6F6">IQ</tspan>
   </text>
+
 </svg>

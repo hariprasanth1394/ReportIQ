@@ -168,13 +168,15 @@ class ExecutionStore {
         testCasesSnapshot.docs.map(async (testCaseDoc) => {
           const testCaseData = testCaseDoc.data();
           
-          // Fetch all steps for this test case
+          // Fetch all steps for this test case (without orderBy to avoid needing index)
           const stepsSnapshot = await db.collection(STEPS_COLLECTION)
             .where('testCaseId', '==', testCaseData.id)
-            .orderBy('createdAt', 'asc')
             .get();
 
-          const steps = stepsSnapshot.docs.map(doc => doc.data());
+          const steps = stepsSnapshot.docs.map(doc => doc.data()).sort((a, b) => {
+            // Sort in memory instead of using orderBy
+            return new Date(a.createdAt) - new Date(b.createdAt);
+          });
           return { ...testCaseData, steps };
         })
       );
@@ -192,13 +194,15 @@ class ExecutionStore {
       const testCaseDoc = await db.collection(TEST_CASES_COLLECTION).doc(testCaseId).get();
       if (!testCaseDoc.exists) return null;
 
-      // Fetch all steps for this test case
+      // Fetch all steps for this test case (without orderBy to avoid needing index)
       const stepsSnapshot = await db.collection(STEPS_COLLECTION)
         .where('testCaseId', '==', testCaseId)
-        .orderBy('createdAt', 'asc')
         .get();
 
-      const steps = stepsSnapshot.docs.map(doc => doc.data());
+      const steps = stepsSnapshot.docs.map(doc => doc.data()).sort((a, b) => {
+        // Sort in memory instead of using orderBy
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      });
       return { ...testCaseDoc.data(), steps };
     } catch (error) {
       console.error('Error getting test case:', error);

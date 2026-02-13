@@ -52,14 +52,22 @@ class UsersStore {
     }
   }
 
-  async createUser(email, name, role = ROLES.USER, password = null) {
+  async createUser({ email, name, role = ROLES.USER, password = null }) {
     try {
+      const normalizedEmail = (email || '').trim().toLowerCase();
+      if (!normalizedEmail) throw new Error('Email is required');
+      if (!name) throw new Error('Name is required');
+      
+      // Check if user already exists
+      const existingUser = await this.getUserByEmail(normalizedEmail);
+      if (existingUser) throw new Error('User with this email already exists');
+
       const hashedPassword = password ? await bcrypt.hash(password, 12) : await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 12);
       const userId = uuidv4();
 
       await db.collection(USERS_COLLECTION).doc(userId).set({
         id: userId,
-        email: (email || '').trim().toLowerCase(),
+        email: normalizedEmail,
         name,
         password: hashedPassword,
         role,
@@ -68,7 +76,7 @@ class UsersStore {
         updatedAt: new Date(),
       });
 
-      return { id: userId, email: (email || '').trim().toLowerCase(), name, role, status: STATUSES.ACTIVE };
+      return { id: userId, email: normalizedEmail, name, role, status: STATUSES.ACTIVE };
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;

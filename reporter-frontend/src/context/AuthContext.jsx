@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { api, setAuthToken, initAuthFromStorage } from '../api/client.js';
+import { api, setAuthToken, initAuthFromStorage, setAuthErrorHandler } from '../api/client.js';
 
 const AuthContext = createContext();
 
@@ -8,7 +8,19 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const logout = () => {
+    setAuthToken(null);
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('reporter_user');
+  };
+
   useEffect(() => {
+    // Setup global auth error handler to auto-logout on 401
+    setAuthErrorHandler(() => {
+      logout();
+    });
+
     const stored = initAuthFromStorage();
     const storedUser = localStorage.getItem('reporter_user');
     if (stored) setToken(stored);
@@ -20,9 +32,8 @@ export function AuthProvider({ children }) {
           setUser(res.data.user);
           localStorage.setItem('reporter_user', JSON.stringify(res.data.user));
         } catch (err) {
-          setAuthToken(null);
-          setToken(null);
-          setUser(null);
+          // Token invalid or expired, clear auth
+          logout();
         }
       }
       setLoading(false);
@@ -36,13 +47,6 @@ export function AuthProvider({ children }) {
     setToken(res.data.token);
     setUser(res.data.user);
     localStorage.setItem('reporter_user', JSON.stringify(res.data.user));
-  };
-
-  const logout = () => {
-    setAuthToken(null);
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('reporter_user');
   };
 
   return (
