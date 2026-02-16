@@ -1,17 +1,33 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Header } from '../components/Header';
-import { KPICard } from '../components/KPICard';
-import { ChartCard } from '../components/ChartCard';
-import { PlayCircle, CheckCircle2, XCircle, Loader2, TrendingUp, Target, Sparkles, TrendingDown, AlertTriangle, Download } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  Paper, Typography, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  CircularProgress, Box, Stack, Button, TextField, MenuItem, Select, FormControl, InputLabel, Grid, Card, CardContent, alpha
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
-import { LoadingState } from '../components/LoadingState';
+import { StatusChip } from '../ui/StatusChip.jsx';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import * as XLSX from 'xlsx';
+
+// Helper function to safely format dates
+const formatDate = (dateValue) => {
+  if (!dateValue) return '-';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleString();
+  } catch (error) {
+    return '-';
+  }
+};
 
 export default function DashboardPage() {
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(null);
+  const navigate = useNavigate();
 
   // Filter states
   const [filterBrowser, setFilterBrowser] = useState('');
@@ -62,7 +78,7 @@ export default function DashboardPage() {
   }, [runs, filterBrowser, filterStatus, filterTags, dateFrom, dateTo]);
 
   // Calculate statistics
-  const calcStats = useMemo(() => {
+  const stats = useMemo(() => {
     const total = filteredRuns.length;
     const passed = filteredRuns.filter(r => r.status === 'PASS').length;
     const failed = filteredRuns.filter(r => r.status === 'FAIL').length;
@@ -78,9 +94,23 @@ export default function DashboardPage() {
     };
   }, [filteredRuns]);
 
-  useEffect(() => {
-    setStats(calcStats);
-  }, [calcStats]);
+  // Browser distribution data
+  const browserData = useMemo(() => {
+    const dist = {};
+    filteredRuns.forEach(run => {
+      dist[run.browser] = (dist[run.browser] || 0) + 1;
+    });
+    return Object.entries(dist).map(([name, value]) => ({ name, value }));
+  }, [filteredRuns]);
+
+  // Status distribution
+  const statusData = useMemo(() => {
+    return [
+      { name: 'Passed', value: stats.passed, color: '#10b981' },
+      { name: 'Failed', value: stats.failed, color: '#ef4444' },
+      { name: 'Running', value: stats.running, color: '#f59e0b' }
+    ].filter(s => s.value > 0);
+  }, [stats]);
 
   // Export to Excel
   const exportToExcel = () => {
@@ -91,8 +121,8 @@ export default function DashboardPage() {
       'Test Cases': run.totalTests || run.testCaseCount || 0,
       Passed: run.passedTests || run.passCount || 0,
       Failed: run.failedTests || run.failCount || 0,
-      Started: run.startedAt ? new Date(run.startedAt).toLocaleString() : '-',
-      Finished: run.finishedAt ? new Date(run.finishedAt).toLocaleString() : '-'
+      Started: formatDate(run.startedAt),
+      Finished: formatDate(run.finishedAt)
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -119,328 +149,848 @@ export default function DashboardPage() {
     XLSX.writeFile(wb, `test-execution-report-${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  // Chart data
-  const passRateTrendData = [
-    { date: 'Jan 1', passRate: 94.2 },
-    { date: 'Jan 8', passRate: 95.5 },
-    { date: 'Jan 15', passRate: 93.8 },
-    { date: 'Jan 22', passRate: 96.1 },
-    { date: 'Jan 29', passRate: 97.3 },
-    { date: 'Feb 5', passRate: stats?.passRate ? parseFloat(stats.passRate) : 98.5 },
-  ];
-
-  const failuresByBrowserData = [
-    { browser: 'Chrome', failures: runs.filter(r => r.browser === 'Chrome' && r.status === 'FAIL').length || 12 },
-    { browser: 'Firefox', failures: runs.filter(r => r.browser === 'Firefox' && r.status === 'FAIL').length || 8 },
-    { browser: 'Safari', failures: runs.filter(r => r.browser === 'Safari' && r.status === 'FAIL').length || 15 },
-    { browser: 'Edge', failures: runs.filter(r => r.browser === 'Edge' && r.status === 'FAIL').length || 5 },
-  ];
-
-  const tagStabilityData = [
-    { name: 'Stable', value: 85, color: '#10b981' },
-    { name: 'Flaky', value: 12, color: '#f59e0b' },
-    { name: 'Broken', value: 3, color: '#ef4444' },
-  ];
-
-  const executionDurationData = [
-    { date: 'Jan 1', duration: 42 },
-    { date: 'Jan 8', duration: 45 },
-    { date: 'Jan 15', duration: 41 },
-    { date: 'Jan 22', duration: 43 },
-    { date: 'Jan 29', duration: 39 },
-    { date: 'Feb 5', duration: 38 },
-  ];
-
   if (loading && runs.length === 0) {
-    return <LoadingState />;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50">
-      <Header title="Dashboard" subtitle="Overview of your test automation performance" />
-      
-      <div className="flex-1 overflow-auto p-8">
-        {/* KPI Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-            <KPICard
-              title="Total Runs"
-              value={stats.total.toLocaleString()}
-              change="+12.5%"
-              changeType="positive"
-              icon={PlayCircle}
-              iconColor="bg-blue-500"
-            />
-            <KPICard
-              title="Passed"
-              value={stats.passed.toLocaleString()}
-              change="+15.2%"
-              changeType="positive"
-              icon={CheckCircle2}
-              iconColor="bg-emerald-500"
-            />
-            <KPICard
-              title="Failed"
-              value={stats.failed.toLocaleString()}
-              change="-8.3%"
-              changeType="positive"
-              icon={XCircle}
-              iconColor="bg-red-500"
-            />
-            <KPICard
-              title="Running"
-              value={stats.running.toLocaleString()}
-              icon={Loader2}
-              iconColor="bg-indigo-500"
-            />
-            <KPICard
-              title="Pass Rate"
-              value={`${stats.passRate}%`}
-              change="+2.3%"
-              changeType="positive"
-              icon={TrendingUp}
-              iconColor="bg-purple-500"
-            />
-            <KPICard
-              title="Stability Score"
-              value="94.2"
-              change="+5.1%"
-              changeType="positive"
-              icon={Target}
-              iconColor="bg-cyan-500"
-            />
-          </div>
-        )}
+    <Stack spacing={3}>
+      {/* Header */}
+      <Box>
+        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: '#111827' }}>
+          Test Execution Analytics
+        </Typography>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Pass Rate Trend */}
-          <ChartCard title="Pass Rate Trend">
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={passRateTrendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" stroke="#64748b" fontSize={12} />
-                <YAxis stroke="#64748b" fontSize={12} domain={[90, 100]} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="passRate" 
-                  stroke="#2563eb" 
-                  strokeWidth={2}
-                  dot={{ fill: '#2563eb', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          {/* Failures by Browser */}
-          <ChartCard title="Failures by Browser">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={failuresByBrowserData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="browser" stroke="#64748b" fontSize={12} />
-                <YAxis stroke="#64748b" fontSize={12} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                />
-                <Bar dataKey="failures" fill="#ef4444" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          {/* Tag Stability */}
-          <ChartCard title="Tag Stability">
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={tagStabilityData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {tagStabilityData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          {/* Execution Duration Trend */}
-          <ChartCard title="Execution Duration (avg seconds)">
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={executionDurationData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" stroke="#64748b" fontSize={12} />
-                <YAxis stroke="#64748b" fontSize={12} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="duration" 
-                  stroke="#8b5cf6" 
-                  strokeWidth={2}
-                  dot={{ fill: '#8b5cf6', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">From Date</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">To Date</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Browser</label>
-              <select
-                value={filterBrowser}
-                onChange={(e) => setFilterBrowser(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Browsers</option>
-                <option value="Chrome">Chrome</option>
-                <option value="Firefox">Firefox</option>
-                <option value="Safari">Safari</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Status</option>
-                <option value="PASS">Passed</option>
-                <option value="FAIL">Failed</option>
-                <option value="RUNNING">Running</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Tag</label>
-              <input
-                type="text"
-                value={filterTags}
-                onChange={(e) => setFilterTags(e.target.value)}
-                placeholder="e.g., P1, Smoke"
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex-1" />
-            <button
-              onClick={exportToExcel}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition"
+        {/* Modern Stats Cards */}
+        <Grid container spacing={3}>
+          {/* Total Runs Card */}
+          <Grid item xs={12} sm={6} md={4} lg={2}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: alpha('#2563eb', 0.1),
+                bgcolor: 'white',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  borderColor: alpha('#2563eb', 0.3),
+                  boxShadow: `0 4px 12px ${alpha('#2563eb', 0.15)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
             >
-              <Download className="size-4" />
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#64748b', 
+                    fontWeight: 600, 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontSize: '0.7rem',
+                  }}
+                >
+                  Total Runs
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mt: 1.5 }}>
+                  <Typography 
+                    variant="h3" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: '#111827',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stats.total}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Passed Card */}
+          <Grid item xs={12} sm={6} md={4} lg={2}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: alpha('#10b981', 0.1),
+                bgcolor: 'white',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  borderColor: alpha('#10b981', 0.3),
+                  boxShadow: `0 4px 12px ${alpha('#10b981', 0.15)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#64748b', 
+                    fontWeight: 600, 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontSize: '0.7rem',
+                  }}
+                >
+                  Passed
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mt: 1.5 }}>
+                  <Typography 
+                    variant="h3" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: '#10b981',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stats.passed}
+                  </Typography>
+                  {stats.total > 0 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <TrendingUpIcon sx={{ fontSize: 16, color: '#10b981' }} />
+                      <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 600 }}>
+                        {((stats.passed / stats.total) * 100).toFixed(0)}%
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Failed Card */}
+          <Grid item xs={12} sm={6} md={4} lg={2}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: alpha('#ef4444', 0.1),
+                bgcolor: 'white',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  borderColor: alpha('#ef4444', 0.3),
+                  boxShadow: `0 4px 12px ${alpha('#ef4444', 0.15)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#64748b', 
+                    fontWeight: 600, 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontSize: '0.7rem',
+                  }}
+                >
+                  Failed
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mt: 1.5 }}>
+                  <Typography 
+                    variant="h3" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: '#ef4444',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stats.failed}
+                  </Typography>
+                  {stats.total > 0 && stats.failed > 0 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <TrendingDownIcon sx={{ fontSize: 16, color: '#ef4444' }} />
+                      <Typography variant="caption" sx={{ color: '#ef4444', fontWeight: 600 }}>
+                        {((stats.failed / stats.total) * 100).toFixed(0)}%
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Running Card */}
+          <Grid item xs={12} sm={6} md={4} lg={2}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: alpha('#f59e0b', 0.1),
+                bgcolor: 'white',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  borderColor: alpha('#f59e0b', 0.3),
+                  boxShadow: `0 4px 12px ${alpha('#f59e0b', 0.15)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#64748b', 
+                    fontWeight: 600, 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontSize: '0.7rem',
+                  }}
+                >
+                  Running
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mt: 1.5 }}>
+                  <Typography 
+                    variant="h3" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: '#f59e0b',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stats.running}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Total Tests Card */}
+          <Grid item xs={12} sm={6} md={4} lg={2}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: alpha('#6366f1', 0.1),
+                bgcolor: 'white',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  borderColor: alpha('#6366f1', 0.3),
+                  boxShadow: `0 4px 12px ${alpha('#6366f1', 0.15)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#64748b', 
+                    fontWeight: 600, 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontSize: '0.7rem',
+                  }}
+                >
+                  Total Tests
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mt: 1.5 }}>
+                  <Typography 
+                    variant="h3" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: '#111827',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stats.totalTests}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Pass Rate Card */}
+          <Grid item xs={12} sm={6} md={4} lg={2}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: alpha('#8b5cf6', 0.1),
+                bgcolor: 'white',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  borderColor: alpha('#8b5cf6', 0.3),
+                  boxShadow: `0 4px 12px ${alpha('#8b5cf6', 0.15)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#64748b', 
+                    fontWeight: 600, 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontSize: '0.7rem',
+                  }}
+                >
+                  Pass Rate
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mt: 1.5 }}>
+                  <Typography 
+                    variant="h3" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: '#8b5cf6',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stats.passRate}%
+                  </Typography>
+                  {stats.passRate >= 70 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <TrendingUpIcon sx={{ fontSize: 16, color: '#10b981' }} />
+                    </Box>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Charts */}
+      {filteredRuns.length > 0 && (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'white',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    mb: 3, 
+                    fontWeight: 600,
+                    color: '#111827',
+                    fontSize: '1.125rem',
+                  }}
+                >
+                  Tests by Status
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={statusData} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}`} outerRadius={80} fill="#8884d8" dataKey="value">
+                      {statusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'white',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    mb: 3, 
+                    fontWeight: 600,
+                    color: '#111827',
+                    fontSize: '1.125rem',
+                  }}
+                >
+                  Tests by Browser
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={browserData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'white',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    mb: 3, 
+                    fontWeight: 600,
+                    color: '#111827',
+                    fontSize: '1.125rem',
+                  }}
+                >
+                  Test Results Overview
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={[{ name: 'Results', Passed: stats.passedTests, Failed: stats.failedTests }]}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="Passed" fill="#10b981" />
+                    <Bar dataKey="Failed" fill="#ef4444" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Filters */}
+      <Card 
+        elevation={0}
+        sx={{ 
+          borderRadius: 4,
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'white',
+          overflow: 'hidden',
+        }}
+      >
+        <Box sx={{ p: 3 }}>
+          <Typography 
+            variant="subtitle2" 
+            sx={{ 
+              mb: 2.5, 
+              fontWeight: 600,
+              color: '#111827',
+              fontSize: '0.9375rem',
+            }}
+          >
+            Filter Execution Runs
+          </Typography>
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={2} 
+            alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+            flexWrap="wrap"
+            useFlexGap
+          >
+            <TextField
+              label="From Date"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+              sx={{ 
+                minWidth: 160,
+                flex: { xs: '1 1 100%', sm: '0 1 160px' },
+              }}
+            />
+            <TextField
+              label="To Date"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+              sx={{ 
+                minWidth: 160,
+                flex: { xs: '1 1 100%', sm: '0 1 160px' },
+              }}
+            />
+            <FormControl 
+              size="small" 
+              sx={{ 
+                minWidth: 140,
+                flex: { xs: '1 1 100%', sm: '0 1 140px' },
+              }}
+            >
+              <InputLabel>Browser</InputLabel>
+              <Select 
+                value={filterBrowser} 
+                label="Browser" 
+                onChange={(e) => setFilterBrowser(e.target.value)}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="chrome">Chrome</MenuItem>
+                <MenuItem value="firefox">Firefox</MenuItem>
+                <MenuItem value="safari">Safari</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl 
+              size="small" 
+              sx={{ 
+                minWidth: 140,
+                flex: { xs: '1 1 100%', sm: '0 1 140px' },
+              }}
+            >
+              <InputLabel>Status</InputLabel>
+              <Select 
+                value={filterStatus} 
+                label="Status" 
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="PASS">Passed</MenuItem>
+                <MenuItem value="FAIL">Failed</MenuItem>
+                <MenuItem value="RUNNING">Running</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              label="Tag"
+              value={filterTags}
+              onChange={(e) => setFilterTags(e.target.value)}
+              size="small"
+              placeholder="e.g., P1, Smoke"
+              sx={{ 
+                minWidth: 140,
+                flex: { xs: '1 1 100%', sm: '0 1 140px' },
+              }}
+            />
+            <Box sx={{ flexGrow: 1 }} />
+            <Button 
+              startIcon={<FileDownloadIcon />} 
+              variant="contained" 
+              onClick={exportToExcel} 
+              sx={{ 
+                bgcolor: '#10b981',
+                textTransform: 'none',
+                borderRadius: 2,
+                fontWeight: 500,
+                px: 3,
+                alignSelf: { xs: 'stretch', sm: 'flex-start' },
+                '&:hover': { bgcolor: '#059669' },
+              }}
+            >
               Export Excel
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Stack>
+        </Box>
+      </Card>
 
-        {/* AI Insights Section */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-2 rounded-lg">
-              <Sparkles className="size-5 text-white" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900">AI Insights</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-emerald-500 p-2 rounded-lg">
-                  <TrendingUp className="size-4 text-white" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-slate-900 mb-1">Improved Performance</h4>
-                  <p className="text-sm text-slate-600">
-                    Your pass rate increased by {stats?.passRate || 2.3}% this week. Great progress on the checkout flow tests!
-                  </p>
-                </div>
-              </div>
-            </div>
+      {/* Table */}
+      <Box>
+        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 600, 
+              color: '#111827',
+              fontSize: '1.125rem',
+            }}
+          >
+            Test Execution Runs 
+            <Typography 
+              component="span" 
+              sx={{ 
+                ml: 1, 
+                color: '#64748b', 
+                fontWeight: 500,
+                fontSize: '0.95rem',
+              }}
+            >
+              ({filteredRuns.length})
+            </Typography>
+          </Typography>
+          {(filterBrowser || filterStatus || filterTags || dateFrom || dateTo) && (
+            <Button 
+              size="small" 
+              variant="outlined"
+              sx={{ 
+                textTransform: 'none',
+                borderRadius: 2,
+              }}
+              onClick={() => {
+                setFilterBrowser('');
+                setFilterStatus('');
+                setFilterTags('');
+                setDateFrom('');
+                setDateTo('');
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
+        </Stack>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-amber-500 p-2 rounded-lg">
-                  <AlertTriangle className="size-4 text-white" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-slate-900 mb-1">Flaky Test Detected</h4>
-                  <p className="text-sm text-slate-600">
-                    "Login with OAuth" test has failed {stats?.failed || 3} times in different environments. Consider reviewing.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-500 p-2 rounded-lg">
-                  <TrendingDown className="size-4 text-white" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-slate-900 mb-1">Duration Optimization</h4>
-                  <p className="text-sm text-slate-600">
-                    Average test duration decreased by 7s. Parallel execution is working efficiently.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        <Card 
+          elevation={0}
+          sx={{ 
+            borderRadius: 4,
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'white',
+            overflow: 'hidden',
+          }}
+        >
+          <TableContainer sx={{ maxHeight: 600 }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Browser
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Tags
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Status
+                  </TableCell>
+                  <TableCell 
+                    align="center"
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Tests
+                  </TableCell>
+                  <TableCell 
+                    align="center"
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Pass / Fail
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Started
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Finished
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredRuns.length > 0 ? filteredRuns.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    hover
+                    sx={{ 
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s',
+                      '&:hover': { 
+                        bgcolor: alpha('#2563eb', 0.04),
+                      },
+                    }}
+                    onClick={() => navigate(`/runs/${row.id}`)}
+                  >
+                    <TableCell sx={{ py: 2.5 }}>
+                      <Chip 
+                        label={row.browser} 
+                        size="small" 
+                        sx={{ 
+                          fontWeight: 500,
+                          textTransform: 'capitalize',
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ py: 2.5 }}>
+                      <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                        {row.tags && row.tags.length > 0 ? (
+                          row.tags.map((tag, idx) => (
+                            <Chip 
+                              key={idx} 
+                              label={tag} 
+                              size="small" 
+                              variant="outlined" 
+                              color="primary"
+                              sx={{ 
+                                fontSize: '0.75rem',
+                                height: 24,
+                              }}
+                            />
+                          ))
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">-</Typography>
+                        )}
+                      </Stack>
+                    </TableCell>
+                    <TableCell sx={{ py: 2.5 }}>
+                      <StatusChip status={row.status} />
+                    </TableCell>
+                    <TableCell align="center" sx={{ py: 2.5, fontWeight: 600, color: '#111827' }}>
+                      {row.totalTests || row.testCaseCount || 0}
+                    </TableCell>
+                    <TableCell align="center" sx={{ py: 2.5 }}>
+                      <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                        <Chip 
+                          label={`✓ ${row.passedTests || row.passCount || 0}`} 
+                          size="small" 
+                          sx={{
+                            bgcolor: alpha('#10b981', 0.1),
+                            color: '#059669',
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            height: 24,
+                            '& .MuiChip-label': { px: 1.5 },
+                          }}
+                        />
+                        {(row.failedTests || row.failCount || 0) > 0 && (
+                          <Chip 
+                            label={`✗ ${row.failedTests || row.failCount || 0}`} 
+                            size="small" 
+                            sx={{
+                              bgcolor: alpha('#ef4444', 0.1),
+                              color: '#dc2626',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              '& .MuiChip-label': { px: 1.5 },
+                            }}
+                          />
+                        )}
+                      </Stack>
+                    </TableCell>
+                    <TableCell sx={{ py: 2.5, fontSize: '0.875rem', color: '#64748b' }}>
+                      {formatDate(row.startedAt)}
+                    </TableCell>
+                    <TableCell sx={{ py: 2.5, fontSize: '0.875rem', color: '#64748b' }}>
+                      {formatDate(row.finishedAt)}
+                    </TableCell>
+                  </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell 
+                      colSpan={7} 
+                      align="center" 
+                      sx={{ 
+                        py: 8, 
+                        color: '#9ca3af',
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      No execution runs found. Run your tests to get started.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Card>
+      </Box>
+    </Stack>
   );
 }

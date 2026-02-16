@@ -20,7 +20,14 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
+  Card,
+  alpha,
+  IconButton,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import LockResetIcon from '@mui/icons-material/LockReset';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -129,85 +136,338 @@ export default function UsersPage() {
 
   if (!canManageUsers) {
     return (
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h6">Access restricted</Typography>
-        <Typography color="text.secondary">You do not have permission to view this page.</Typography>
-      </Paper>
+      <Box sx={{ p: 4 }}>
+        <Card 
+          elevation={0}
+          sx={{ 
+            borderRadius: 4,
+            border: '1px solid',
+            borderColor: 'divider',
+            p: 6,
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: '#111827' }}>
+            Access Restricted
+          </Typography>
+          <Typography color="text.secondary">
+            You do not have permission to view this page.
+          </Typography>
+        </Card>
+      </Box>
     );
   }
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h5">Users</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage roles, status, and password recovery securely.
-          </Typography>
-        </Box>
-        <Button variant="contained" onClick={() => setCreateOpen(true)}>
-          Add User
-        </Button>
-      </Stack>
+      {/* Header */}
+      <Box>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={2} 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          justifyContent="space-between"
+        >
+          <Box>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 600, 
+                color: '#111827',
+                mb: 0.5,
+              }}
+            >
+              User Management
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#64748b',
+                fontSize: '0.875rem',
+              }}
+            >
+              Manage user roles, status, and password recovery securely
+            </Typography>
+          </Box>
+          <Button 
+            variant="contained" 
+            startIcon={<AddIcon />}
+            onClick={() => setCreateOpen(true)}
+            sx={{
+              bgcolor: '#2563eb',
+              textTransform: 'none',
+              borderRadius: 2,
+              fontWeight: 500,
+              px: 3,
+              '&:hover': { bgcolor: '#1d4ed8' },
+            }}
+          >
+            Add User
+          </Button>
+        </Stack>
+      </Box>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {error && (
+        <Alert 
+          severity="error"
+          sx={{ 
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: alpha('#ef4444', 0.2),
+          }}
+        >
+          {error}
+        </Alert>
+      )}
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper} elevation={0}>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                <TableCell><strong>Name</strong></TableCell>
-                <TableCell><strong>Email</strong></TableCell>
-                <TableCell><strong>Role</strong></TableCell>
-                <TableCell><strong>Status</strong></TableCell>
-                <TableCell><strong>Actions</strong></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((row) => (
-                <TableRow key={row.id} hover>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.email}</TableCell>
-                  <TableCell>
-                    <Chip label={row.role} size="small" color={row.role === 'SUPER_ADMIN' ? 'warning' : 'primary'} variant="outlined" />
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={row.status} size="small" color={row.status === 'ACTIVE' ? 'success' : 'default'} variant="outlined" />
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                      <Button size="small" variant="outlined" onClick={() => openEdit(row)}>
-                        Edit
-                      </Button>
-                      {isSuperAdmin && (
-                        <>
-                          <Button size="small" variant="outlined" onClick={() => openReset(row)}>
-                            Reset Password
-                          </Button>
-                          <Button size="small" variant="contained" onClick={() => handleRecoveryPassword(row)}>
-                            Recovery Password
-                          </Button>
-                        </>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {users.length === 0 && (
+        <Card 
+          elevation={0}
+          sx={{ 
+            borderRadius: 4,
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'white',
+            overflow: 'hidden',
+          }}
+        >
+          <TableContainer sx={{ maxHeight: 600 }}>
+            <Table stickyHeader>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                    No users created yet.
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Name
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Email
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Role
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Status
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      bgcolor: '#f8fafc',
+                      fontWeight: 700,
+                      color: '#475569',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      py: 2,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    Actions
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {users.map((row) => (
+                  <TableRow 
+                    key={row.id} 
+                    hover
+                    sx={{
+                      transition: 'background-color 0.2s',
+                      '&:hover': { 
+                        bgcolor: alpha('#2563eb', 0.04),
+                      },
+                    }}
+                  >
+                    <TableCell sx={{ py: 2.5, fontWeight: 500, color: '#111827' }}>
+                      {row.name}
+                    </TableCell>
+                    <TableCell sx={{ py: 2.5, color: '#64748b' }}>
+                      {row.email}
+                    </TableCell>
+                    <TableCell sx={{ py: 2.5 }}>
+                      <Chip 
+                        label={row.role} 
+                        size="small"
+                        sx={{
+                          bgcolor: row.role === 'SUPER_ADMIN' 
+                            ? alpha('#f59e0b', 0.1)
+                            : alpha('#2563eb', 0.1),
+                          color: row.role === 'SUPER_ADMIN' 
+                            ? '#d97706'
+                            : '#2563eb',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          height: 24,
+                          borderRadius: 1.5,
+                          '& .MuiChip-label': { px: 1.5 },
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ py: 2.5 }}>
+                      <Chip 
+                        label={row.status} 
+                        size="small"
+                        sx={{
+                          bgcolor: row.status === 'ACTIVE' 
+                            ? alpha('#10b981', 0.1)
+                            : alpha('#64748b', 0.1),
+                          color: row.status === 'ACTIVE' 
+                            ? '#059669'
+                            : '#475569',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          height: 24,
+                          borderRadius: 1.5,
+                          '& .MuiChip-label': { px: 1.5 },
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ py: 2.5 }}>
+                      <Stack direction="row" spacing={1}>
+                        <Button 
+                          size="small" 
+                          variant="outlined"
+                          startIcon={<EditIcon sx={{ fontSize: 16 }} />}
+                          onClick={() => openEdit(row)}
+                          sx={{
+                            textTransform: 'none',
+                            borderRadius: 1.5,
+                            fontSize: '0.8125rem',
+                            fontWeight: 500,
+                            px: 1.5,
+                            py: 0.5,
+                            minWidth: 'auto',
+                            borderColor: alpha('#2563eb', 0.3),
+                            color: '#2563eb',
+                            '&:hover': {
+                              borderColor: '#2563eb',
+                              bgcolor: alpha('#2563eb', 0.04),
+                            },
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        {isSuperAdmin && (
+                          <>
+                            <Button 
+                              size="small" 
+                              variant="outlined"
+                              startIcon={<LockResetIcon sx={{ fontSize: 16 }} />}
+                              onClick={() => openReset(row)}
+                              sx={{
+                                textTransform: 'none',
+                                borderRadius: 1.5,
+                                fontSize: '0.8125rem',
+                                fontWeight: 500,
+                                px: 1.5,
+                                py: 0.5,
+                                minWidth: 'auto',
+                                borderColor: alpha('#f59e0b', 0.3),
+                                color: '#f59e0b',
+                                '&:hover': {
+                                  borderColor: '#f59e0b',
+                                  bgcolor: alpha('#f59e0b', 0.04),
+                                },
+                              }}
+                            >
+                              Reset
+                            </Button>
+                            <Button 
+                              size="small" 
+                              variant="contained"
+                              startIcon={<VpnKeyIcon sx={{ fontSize: 16 }} />}
+                              onClick={() => handleRecoveryPassword(row)}
+                              sx={{
+                                textTransform: 'none',
+                                borderRadius: 1.5,
+                                fontSize: '0.8125rem',
+                                fontWeight: 500,
+                                px: 1.5,
+                                py: 0.5,
+                                minWidth: 'auto',
+                                bgcolor: '#10b981',
+                                '&:hover': {
+                                  bgcolor: '#059669',
+                                },
+                              }}
+                            >
+                              Recovery
+                            </Button>
+                          </>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {users.length === 0 && (
+                  <TableRow>
+                    <TableCell 
+                      colSpan={5} 
+                      align="center" 
+                      sx={{ 
+                        py: 8, 
+                        color: '#9ca3af',
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      No users created yet. Click "Add User" to get started.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Card>
       )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">

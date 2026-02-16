@@ -1,163 +1,175 @@
 import React, { useState } from 'react';
-import { Activity, Lock, Mail, AlertCircle } from 'lucide-react';
+import {
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Alert,
+  Stack,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
+import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api/client.js';
 
-export function LoginPage({ onLogin }) {
-  const [email, setEmail] = useState('admin@company.com');
-  const [password, setPassword] = useState('password');
+export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [username, setUsername] = useState('Hariprasanthtest@gmail.com');
+  const [password, setPassword] = useState('Inferno0!');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMessage, setForgotMessage] = useState('');
 
-  const handleSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
-
+    setError('');
     try {
-      const response = await api.post('/api/auth/login', {
-        email,
-        password,
-      });
-
-      const { token, user } = response.data;
-      onLogin(token, user);
+      await login(username, password);
+      const redirectTo = location.state?.from?.pathname || '/';
+      navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
-      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleForgot = async () => {
+    setForgotMessage('');
+    try {
+      const res = await api.post('/api/auth/forgot-password', { email: forgotEmail });
+      setForgotMessage(res.data?.message || 'Check your email for reset instructions.');
+    } catch (err) {
+      setForgotMessage(err.response?.data?.message || 'Unable to request reset.');
+    }
+  };
+
   return (
-    <div className="min-h-screen flex">
-      {/* Left Column - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-white">
-        <div className="w-full max-w-md">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-lg shadow-lg">
-                <Activity className="size-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900">ReportIQ</h1>
-                <p className="text-xs text-slate-500 font-medium">Test Analytics Platform</p>
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h2>
-            <p className="text-slate-600 text-sm">Sign in to your account to continue</p>
-          </div>
-
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-              <AlertCircle className="size-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-semibold text-slate-700">
-                Email address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  className="w-full pl-12 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-semibold text-slate-700">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full pl-12 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-slate-300 w-4 h-4" />
-                <span className="text-sm text-slate-600">Remember me</span>
-              </label>
-              <a href="#" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                Forgot password?
-              </a>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+    <Box
+      sx={{
+        minHeight: 'calc(100vh - 64px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 2,
+      }}
+    >
+      <Paper elevation={0} sx={{ maxWidth: 1040, width: '100%', overflow: 'hidden' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr 1fr' } }}>
+          <Box sx={{ p: { xs: 4, md: 6 } }}>
+            <Stack spacing={3}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <IconButton size="small" sx={{ bgcolor: 'rgba(96,165,250,0.2)' }}>
+                  <AssessmentOutlinedIcon fontSize="small" />
+                </IconButton>
+                <IconButton size="small" sx={{ bgcolor: 'rgba(129,140,248,0.2)' }}>
+                  <TimelineOutlinedIcon fontSize="small" />
+                </IconButton>
+                <IconButton size="small" sx={{ bgcolor: 'rgba(56,189,248,0.2)' }}>
+                  <ShieldOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+              <Box>
+                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                  Welcome back
+                </Typography>
+                <Typography color="text.secondary">
+                  Sign in to your Reporter workspace to access execution analytics.
+                </Typography>
+              </Box>
+              {error && <Alert severity="error">{error}</Alert>}
+              <Box component="form" onSubmit={onSubmit}>
+                <Stack spacing={2}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Button variant="text" color="secondary" onClick={() => setForgotOpen(true)}>
+                      Forgot password?
+                    </Button>
+                  </Stack>
+                  <Button type="submit" variant="contained" size="large" disabled={loading}>
+                    {loading ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                </Stack>
+              </Box>
+            </Stack>
+          </Box>
+          <Box
+            sx={{
+              bgcolor: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+              p: { xs: 4, md: 6 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Box
+              component="svg"
+              viewBox="0 0 400 300"
+              sx={{ width: '100%', maxWidth: 360, height: 'auto' }}
             >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Signing in...
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </button>
-          </form>
+              <defs>
+                <linearGradient id="dashGradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#2563eb" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.9" />
+                </linearGradient>
+              </defs>
+              <rect x="20" y="20" width="360" height="260" rx="24" fill="#ffffff" stroke="#e2e8f0" strokeWidth="2" />
+              <rect x="45" y="50" width="140" height="80" rx="16" fill="url(#dashGradient)" opacity="0.8" />
+              <rect x="205" y="50" width="150" height="80" rx="16" fill="#f1f5f9" />
+              <rect x="45" y="150" width="310" height="20" rx="10" fill="#e2e8f0" />
+              <rect x="45" y="180" width="240" height="20" rx="10" fill="#e2e8f0" />
+              <circle cx="300" cy="200" r="28" fill="url(#dashGradient)" />
+              <path d="M70 230 L110 210 L150 225 L190 190 L230 205 L270 170 L330 190" stroke="url(#dashGradient)" strokeWidth="6" fill="none" strokeLinecap="round" />
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
 
-          <p className="mt-8 text-center text-sm text-slate-600">
-            Demo credentials: admin@company.com / password
-          </p>
-        </div>
-      </div>
-
-      {/* Right Column - Illustration */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100">
-        <div className="max-w-lg text-center">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 mb-8">
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-emerald-50 rounded-lg p-4 text-left border border-emerald-100">
-                <div className="text-3xl font-bold text-emerald-600 mb-1">98.5%</div>
-                <div className="text-xs text-slate-600 font-medium">Pass Rate</div>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-4 text-left border border-blue-100">
-                <div className="text-3xl font-bold text-blue-600 mb-1">2,451</div>
-                <div className="text-xs text-slate-600 font-medium">Total Tests</div>
-              </div>
-              <div className="bg-purple-50 rounded-lg p-4 text-left border border-purple-100">
-                <div className="text-3xl font-bold text-purple-600 mb-1">45s</div>
-                <div className="text-xs text-slate-600 font-medium">Avg Duration</div>
-              </div>
-              <div className="bg-orange-50 rounded-lg p-4 text-left border border-orange-100">
-                <div className="text-3xl font-bold text-orange-600 mb-1">12</div>
-                <div className="text-xs text-slate-600 font-medium">Active Runs</div>
-              </div>
-            </div>
-            <div className="h-32 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
-              <Activity className="size-16 text-blue-600 opacity-50" />
-            </div>
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">
-            Powerful test analytics at your fingertips
-          </h2>
-          <p className="text-slate-600 text-lg">
-            Track, analyze, and optimize your automation testing with real-time insights and AI-powered recommendations.
-          </p>
-        </div>
-      </div>
-    </div>
+      <Dialog open={forgotOpen} onClose={() => setForgotOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Password recovery</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Typography variant="body2" color="text.secondary">
+              Enter your email to request a reset. If email delivery is unavailable, contact your administrator.
+            </Typography>
+            <TextField
+              label="Email"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+            />
+            {forgotMessage && <Alert severity="info">{forgotMessage}</Alert>}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setForgotOpen(false)}>Close</Button>
+          <Button variant="contained" onClick={handleForgot}>Request reset</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
