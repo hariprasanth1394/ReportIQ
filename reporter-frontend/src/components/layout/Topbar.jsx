@@ -19,12 +19,12 @@ export function Topbar({ title, subtitle }) {
             <input
               type="text"
               placeholder="Search..."
-              className="pl-10 pr-4 py-2.5 w-72 bg-slate-50 border border-slate-200 rounded-xl text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="pl-10 pr-4 py-2.5 w-72 bg-slate-50 border border-slate-200 rounded-2xl text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
           
           {/* Notifications Bell */}
-          <button className="relative p-2.5 hover:bg-slate-100 rounded-xl transition-colors group">
+          <button className="relative p-2.5 hover:bg-slate-100 rounded-2xl transition-colors group">
             <Bell className="w-5 h-5 text-slate-600 group-hover:text-slate-900" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
           </button>

@@ -9,7 +9,7 @@ interface ChartCardProps {
 
 export function ChartCard({ title, subtitle, children, action }: ChartCardProps) {
   return (
-    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>

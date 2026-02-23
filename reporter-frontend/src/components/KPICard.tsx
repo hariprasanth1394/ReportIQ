@@ -18,7 +18,7 @@ export function KPICard({ title, value, change, changeType = 'neutral', icon: Ic
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm text-slate-600 mb-1">{title}</p>
@@ -31,7 +31,7 @@ export function KPICard({ title, value, change, changeType = 'neutral', icon: Ic
             )}
           </div>
         </div>
-        <div className={`${iconColor} p-3 rounded-lg`}>
+        <div className={`${iconColor} p-3 rounded-xl`}>
           <Icon className="size-5 text-white" />
         </div>
       </div>

@@ -25,7 +25,7 @@ import { useAuth } from '../context/AuthContext';
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Execution Runs', icon: <PlayCircleOutlineIcon />, path: '/executions' },
+  { text: 'Execution Runs', icon: <PlayCircleOutlineIcon />, path: '/execution-runs' },
   { text: 'Analytics', icon: <BarChartIcon />, path: '/analytics' },
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },

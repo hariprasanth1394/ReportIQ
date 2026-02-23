@@ -47,7 +47,7 @@ const theme = createTheme({
     divider: '#E5E7EB',
   },
   shape: {
-    borderRadius: 16,
+    borderRadius: 4,
   },
   typography: {
     fontFamily: [

@@ -159,7 +159,7 @@ export default function UsersPage() {
   }
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} sx={{ px: 3, py: 2.5 }}>
       {/* Header */}
       <Box>
         <Stack 
@@ -198,7 +198,8 @@ export default function UsersPage() {
               textTransform: 'none',
               borderRadius: 2,
               fontWeight: 500,
-              px: 3,
+              px: 3.5,
+              py: 1.1,
               '&:hover': { bgcolor: '#1d4ed8' },
             }}
           >

@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
-import { ThemeProvider, CssBaseline, Drawer, IconButton, Typography, Button, Box, Container, Stack, Chip, List, ListItem, ListItemIcon, ListItemText, ListItemButton, Divider, Tooltip } from '@mui/material';
-import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
+import { ThemeProvider, CssBaseline, Drawer, Typography, Button, Box, Container, Stack, List, ListItem, ListItemIcon, ListItemText, ListItemButton, Divider, Tooltip } from '@mui/material';
+import { Routes, Route, Navigate, useLocation, useNavigate, Link } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import PeopleIcon from '@mui/icons-material/People';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SettingsIcon from '@mui/icons-material/Settings';
+import TimelineIcon from '@mui/icons-material/Timeline';
 import LogoutIcon from '@mui/icons-material/Logout';
-import LoginPage from './pages/LoginPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
-import ExecutionDetailPage from './pages/ExecutionDetailPage.jsx';
-import TestCaseDetailPage from './pages/TestCaseDetailPage.jsx';
-import UsersPage from './pages/UsersPage.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import theme from './theme.js';
+
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
+const ExecutionDetailPage = lazy(() => import('./pages/ExecutionDetailPage.jsx'));
+const TestCaseDetailPage = lazy(() => import('./pages/TestCaseDetailPage.jsx'));
+const UsersPage = lazy(() => import('./pages/UsersPage.jsx'));
+const ExecutionRunsPage = lazy(() => import('./pages/ExecutionRunsPage.tsx').then((module) => ({ default: module.ExecutionRunsPage })));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.tsx').then((module) => ({ default: module.AnalyticsPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage.tsx').then((module) => ({ default: module.SettingsPage })));
 
 function PrivateRoute({ children, roles }) {
   const { token, user, loading } = useAuth();
@@ -27,18 +33,29 @@ function PrivateRoute({ children, roles }) {
   return children;
 }
 
-const drawerWidthExpanded = 260;
-const drawerWidthCollapsed = 72;
+const drawerWidthExpanded = 190;
+
+function ExecutionRunsRoute() {
+  const navigate = useNavigate();
+
+  return (
+    <ExecutionRunsPage
+      onNavigateToDetail={(runId) => navigate(`/runs/${runId}`)}
+    />
+  );
+}
 
 function Sidebar() {
   const { token, user, logout } = useAuth();
   const location = useLocation();
-  const [open, setOpen] = useState(true);
   const canManageUsers = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/', show: true },
+    { text: 'Execution Runs', icon: <PlayCircleOutlineIcon />, path: '/execution-runs', show: true },
+    { text: 'Analytics', icon: <BarChartIcon />, path: '/analytics', show: true },
     { text: 'Users', icon: <PeopleIcon />, path: '/users', show: canManageUsers },
+    { text: 'Settings', icon: <SettingsIcon />, path: '/settings', show: true },
   ];
 
   if (!token) return null;
@@ -47,18 +64,15 @@ function Sidebar() {
     <Drawer
       variant="permanent"
       sx={{
-        width: open ? drawerWidthExpanded : drawerWidthCollapsed,
+        width: drawerWidthExpanded,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: open ? drawerWidthExpanded : drawerWidthCollapsed,
+          width: drawerWidthExpanded,
           boxSizing: 'border-box',
-          borderRight: 'none',
-          background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-          borderImageSource: 'linear-gradient(180deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%)',
-          borderImageSlice: 1,
-          borderRight: '3px solid',
-          transition: 'width 0.3s ease',
+          border: 'none',
+          background: 'linear-gradient(180deg, #1E3A8A 0%, #2563EB 100%)',
           overflowX: 'hidden',
+          boxShadow: '4px 0 12px rgba(0, 0, 0, 0.1)',
         },
       }}
     >
@@ -66,86 +80,85 @@ function Sidebar() {
         {/* Logo Section */}
         <Box
           sx={{
-            p: 2,
+            px: 2,
+            py: 2.25,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: open ? 'space-between' : 'center',
+            gap: 1.25,
             minHeight: 80,
           }}
         >
-          {open && (
-            <Box
-              component="img"
-              src="/logo.svg"
-              alt="ReportIQ"
-              sx={{
-                height: 48,
-                width: 220,
-                objectFit: 'contain',
-                objectPosition: 'left center',
-              }}
-            />
-          )}
-          <IconButton
-            onClick={() => setOpen(!open)}
+          <Box
             sx={{
-              bgcolor: 'rgba(37, 99, 235, 0.08)',
-              '&:hover': {
-                bgcolor: 'rgba(37, 99, 235, 0.15)',
-              },
+              width: 30,
+              height: 30,
+              borderRadius: 2,
+              bgcolor: 'rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-          </IconButton>
+            <TimelineIcon sx={{ color: 'white', fontSize: 18 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ color: 'white', fontWeight: 700, fontSize: 26, lineHeight: 1 }}>ReportIQ</Typography>
+            <Typography sx={{ color: 'rgba(255,255,255,0.72)', fontSize: 11, lineHeight: 1.2 }}>Test Analytics</Typography>
+          </Box>
         </Box>
 
-        <Divider sx={{ borderColor: 'rgba(37, 99, 235, 0.12)' }} />
+        <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
 
         {/* Navigation Items */}
-        <List sx={{ px: 1, pt: 2, flex: 1 }}>
+        <List sx={{ px: 1.25, pt: 2, flex: 1 }}>
           {menuItems.filter(item => item.show).map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Tooltip key={item.text} title={!open ? item.text : ''} placement="right">
+              <Tooltip key={item.text} title="" placement="right">
                 <ListItem disablePadding sx={{ mb: 1 }}>
                   <ListItemButton
                     component={Link}
                     to={item.path}
                     sx={{
-                      borderRadius: 2,
-                      minHeight: 48,
-                      justifyContent: open ? 'initial' : 'center',
-                      px: 2.5,
+                      borderRadius: 2.5,
+                      minHeight: 46,
+                      justifyContent: 'initial',
+                      px: 1.9,
+                      color: isActive ? 'white' : 'rgba(255, 255, 255, 0.78)',
                       background: isActive
-                        ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(59, 130, 246, 0.12) 100%)'
+                        ? 'rgba(255, 255, 255, 0.15)'
                         : 'transparent',
-                      borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                      border: isActive ? '1px solid rgba(255,255,255,0.25)' : '1px solid transparent',
+                      backdropFilter: isActive ? 'blur(10px)' : 'none',
                       '&:hover': {
-                        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+                        background: isActive ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.08)',
+                        color: 'white',
                       },
                     }}
                   >
                     <ListItemIcon
                       sx={{
                         minWidth: 0,
-                        mr: open ? 3 : 'auto',
+                        mr: 1.6,
                         justifyContent: 'center',
-                        color: isActive ? '#2563eb' : '#64748b',
+                        color: 'inherit',
+                        '& .MuiSvgIcon-root': {
+                          fontSize: 18,
+                        },
                       }}
                     >
                       {item.icon}
                     </ListItemIcon>
-                    {open && (
-                      <ListItemText
-                        primary={item.text}
-                        sx={{
-                          '& .MuiTypography-root': {
-                            fontWeight: isActive ? 600 : 500,
-                            color: isActive ? '#1e293b' : '#64748b',
-                          },
-                        }}
-                      />
-                    )}
+                    <ListItemText
+                      primary={item.text}
+                      sx={{
+                        '& .MuiTypography-root': {
+                          fontWeight: isActive ? 600 : 500,
+                          fontSize: 14,
+                          color: 'inherit',
+                        },
+                      }}
+                    />
                   </ListItemButton>
                 </ListItem>
               </Tooltip>
@@ -153,42 +166,68 @@ function Sidebar() {
           })}
         </List>
 
-        <Divider sx={{ borderColor: 'rgba(37, 99, 235, 0.12)' }} />
+        <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
 
         {/* User Profile & Logout */}
-        <Box sx={{ p: 2 }}>
-          {open && (
-            <Box sx={{ mb: 2, px: 1 }}>
-              <Stack spacing={0.5}>
-                <Typography variant="body2" fontWeight={600} color="text.primary">
-                  {user?.name || user?.email}
-                </Typography>
-                <Chip
-                  label={user?.role || 'USER'}
-                  size="small"
-                  sx={{
-                    width: 'fit-content',
-                    background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
-                    color: '#ffffff',
-                    fontWeight: 600,
-                  }}
-                />
-              </Stack>
+        <Box sx={{ p: 1.5 }}>
+          <Box
+            sx={{
+              mb: 1.5,
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Box
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: '50%',
+                bgcolor: 'rgba(139, 92, 246, 0.95)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 12,
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
             </Box>
-          )}
-          <Tooltip title={!open ? 'Logout' : ''} placement="right">
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ color: 'white', fontWeight: 600, fontSize: 13, lineHeight: 1.2 }} noWrap>
+                {user?.name || 'User'}
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, lineHeight: 1.2 }} noWrap>
+                {user?.email || 'user@example.com'}
+              </Typography>
+            </Box>
+          </Box>
+          <Tooltip title="" placement="right">
             <Button
-              fullWidth={open}
+              fullWidth
               onClick={logout}
               startIcon={<LogoutIcon />}
               sx={{
-                justifyContent: open ? 'flex-start' : 'center',
-                minWidth: open ? 'auto' : 40,
-                px: open ? 2 : 1,
+                justifyContent: 'flex-start',
+                minWidth: 'auto',
+                px: 1.5,
+                color: 'rgba(255, 255, 255, 0.85)',
+                borderColor: 'rgba(255, 255, 255, 0.35)',
+                '&:hover': {
+                  borderColor: '#fca5a5',
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  color: '#fca5a5',
+                },
               }}
               variant="outlined"
             >
-              {open && 'Logout'}
+              Logout
             </Button>
           </Tooltip>
         </Box>
@@ -208,48 +247,80 @@ export default function App() {
             component="main"
             sx={{
               flexGrow: 1,
-              bgcolor: '#fafbfc',
-              backgroundImage: 'linear-gradient(135deg, #fafbfc 0%, #f1f5f9 50%, #e0f2fe 100%)',
+              bgcolor: '#F4F6F8',
               minHeight: '100vh',
             }}
           >
-            <Container maxWidth="xl" sx={{ py: 4 }}>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                  path="/"
-                  element={
-                    <PrivateRoute>
-                      <DashboardPage />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/users"
-                  element={
-                    <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-                      <UsersPage />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/runs/:runId"
-                  element={
-                    <PrivateRoute>
-                      <ExecutionDetailPage />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/runs/:runId/test-cases/:testCaseId"
-                  element={
-                    <PrivateRoute>
-                      <TestCaseDetailPage />
-                    </PrivateRoute>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
+            <Container maxWidth={false} sx={{ py: 0, px: { xs: 0, sm: 0 } }}>
+              <Suspense
+                fallback={(
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                    <Typography variant="body2" color="text.secondary">Loading...</Typography>
+                  </Box>
+                )}
+              >
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route
+                    path="/"
+                    element={
+                      <PrivateRoute>
+                        <DashboardPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/execution-runs"
+                    element={
+                      <PrivateRoute>
+                        <ExecutionRunsRoute />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route path="/executions" element={<Navigate to="/execution-runs" replace />} />
+                  <Route
+                    path="/analytics"
+                    element={
+                      <PrivateRoute>
+                        <AnalyticsPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/users"
+                    element={
+                      <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
+                        <UsersPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <PrivateRoute>
+                        <SettingsPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/runs/:runId"
+                    element={
+                      <PrivateRoute>
+                        <ExecutionDetailPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/runs/:runId/test-cases/:testCaseId"
+                    element={
+                      <PrivateRoute>
+                        <TestCaseDetailPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+              </Suspense>
             </Container>
           </Box>
         </Box>

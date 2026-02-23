@@ -106,7 +106,7 @@ export function DashboardPage() {
                   contentStyle={{ 
                     backgroundColor: 'white', 
                     border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
                 />
@@ -133,7 +133,7 @@ export function DashboardPage() {
                   contentStyle={{ 
                     backgroundColor: 'white', 
                     border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
                 />
@@ -163,7 +163,7 @@ export function DashboardPage() {
                   contentStyle={{ 
                     backgroundColor: 'white', 
                     border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
                 />
@@ -183,7 +183,7 @@ export function DashboardPage() {
                   contentStyle={{ 
                     backgroundColor: 'white', 
                     border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
                 />
@@ -201,18 +201,18 @@ export function DashboardPage() {
         </div>
 
         {/* AI Insights Section */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-2 rounded-lg">
+            <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-2 rounded-xl">
               <Sparkles className="size-5 text-white" />
             </div>
             <h3 className="text-lg font-semibold text-slate-900">AI Insights</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
               <div className="flex items-start gap-3">
-                <div className="bg-emerald-500 p-2 rounded-lg">
+                <div className="bg-emerald-500 p-2 rounded-xl">
                   <TrendingUp className="size-4 text-white" />
                 </div>
                 <div>
@@ -224,9 +224,9 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-start gap-3">
-                <div className="bg-amber-500 p-2 rounded-lg">
+                <div className="bg-amber-500 p-2 rounded-xl">
                   <AlertTriangle className="size-4 text-white" />
                 </div>
                 <div>
@@ -238,9 +238,9 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <div className="flex items-start gap-3">
-                <div className="bg-blue-500 p-2 rounded-lg">
+                <div className="bg-blue-500 p-2 rounded-xl">
                   <TrendingDown className="size-4 text-white" />
                 </div>
                 <div>
