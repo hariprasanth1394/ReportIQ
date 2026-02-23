@@ -88,7 +88,6 @@ export function StyledExecutionTable({
       filterable: false,
       align: 'center',
       headerAlign: 'center',
-      displayCell: true,
       renderCell: (params: GridRenderCellParams) => (
         <StatusPill status={params.row.status} />
       ),
@@ -339,8 +338,6 @@ export function StyledExecutionTable({
           rows={rows}
           columns={columns}
           loading={loading}
-          rowHeight={64}
-          headerHeight={56}
           pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
           hideFooter={true}
@@ -354,6 +351,14 @@ export function StyledExecutionTable({
             width: '100%',
             '& .MuiDataGrid-root': {
               borderRadius: 0,
+            },
+            '& .MuiDataGrid-columnHeader, & .MuiDataGrid-columnHeaderTitle': {
+              height: '56px',
+              display: 'flex',
+              alignItems: 'center',
+            },
+            '& .MuiDataGrid-row': {
+              height: '64px !important',
             },
           }}
         />
