@@ -31,52 +31,24 @@ export function StyledExecutionTable({
       align: 'center',
       headerAlign: 'center',
       renderCell: (params: GridRenderCellParams) => (
-        <Box
+        <Typography
           sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            width: '100%',
-            overflow: 'visible',
-            padding: '12px 16px',
+            fontSize: 14,
+            fontWeight: 600,
+            color: '#111827',
+            cursor: 'pointer',
+            textAlign: 'center',
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            maxWidth: '100%',
+            '&:hover': {
+              color: '#2563EB',
+            },
           }}
+          onClick={() => onRowClick?.(params.row.id)}
         >
-          <Typography
-            sx={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: '#111827',
-              cursor: 'pointer',
-              textAlign: 'center',
-              whiteSpace: 'normal',
-              wordBreak: 'break-word',
-              maxWidth: '100%',
-              overflow: 'visible',
-              '&:hover': {
-                color: '#2563EB',
-              },
-            }}
-            onClick={() => onRowClick?.(params.row.id)}
-          >
-            {params.row.name}
-          </Typography>
-          <Box
-            sx={{
-              fontSize: 12,
-              color: '#9CA3AF',
-              fontFamily: 'monospace',
-              letterSpacing: '0.5px',
-              whiteSpace: 'normal',
-              wordBreak: 'break-all',
-              maxWidth: '100%',
-            }}
-          >
-            {params.row.id.slice(-8).toUpperCase()}
-          </Box>
-        </Box>
+          {params.row.name}
+        </Typography>
       ),
     },
     {
