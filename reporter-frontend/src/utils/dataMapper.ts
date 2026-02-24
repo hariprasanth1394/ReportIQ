@@ -96,7 +96,8 @@ export function computeDuration(start?: any, end?: any): string {
 export function normalizeRun(run: any): NormalizedExecutionRun {
   // Core identity - required fallbacks
   const id = run.id || 'unknown';
-  const name = run.name || run.id || `Execution ${id.slice(-8).toUpperCase()}`;
+  // Display name: use custom name or fallback to the short ID (now RUN123ABC format)
+  const name = run.name || id;
 
   // Status determination - COMPLETE MAP of all backend values
   let status: 'passed' | 'failed' | 'running' | 'pending' = 'pending';

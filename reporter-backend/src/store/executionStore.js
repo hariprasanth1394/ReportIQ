@@ -5,11 +5,29 @@ const RUNS_COLLECTION = 'executionRuns';
 const TEST_CASES_COLLECTION = 'testCases';
 const STEPS_COLLECTION = 'steps';
 
+/**
+ * Generate a short 6-digit alphanumeric ID (SaaS-style)
+ * Format: RUN123ABC, TC4D5E6F, STEP7G8H
+ * More user-friendly than full UUIDs
+ * 
+ * @param {string} prefix - Prefix for the ID (e.g., 'RUN', 'TC', 'STEP')
+ * @returns {string} - Short ID like "RUN123ABC"
+ */
+function generateShortId(prefix = '') {
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let id = '';
+  for (let i = 0; i < 6; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return prefix ? `${prefix}${id}` : id;
+}
+
 class ExecutionStore {
   // Start a new execution run (batch of tests)
   async startRun({ runId, browser, tags }) {
     try {
-      const id = runId || uuidv4();
+      // Use provided runId or generate short SaaS-style ID
+      const id = runId || generateShortId('RUN');
       const record = {
         id,
         browser,
@@ -37,7 +55,8 @@ class ExecutionStore {
       const run = await db.collection(RUNS_COLLECTION).doc(runId).get();
       if (!run.exists) return null;
 
-      const testCaseId_ = testCaseId || uuidv4();
+      // Use provided testCaseId or generate short SaaS-style ID
+      const testCaseId_ = testCaseId || generateShortId('TC');
       const testCase = {
         id: testCaseId_,
         runId,
@@ -70,7 +89,8 @@ class ExecutionStore {
     try {
       const testCaseDoc = await db.collection(TEST_CASES_COLLECTION).doc(testCaseId).get();
       if (!testCaseDoc.exists) return null;
-
+// Generate short SaaS-style ID for steps
+      const stepId = generateShortId('STEP'
       const stepId = uuidv4();
       const step = {
         id: stepId,
