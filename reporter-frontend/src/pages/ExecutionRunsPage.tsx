@@ -34,9 +34,28 @@ export function ExecutionRunsPage({ onNavigateToDetail }: ExecutionRunsPageProps
     try {
       const response = await api.get('/api/executions/runs');
       
+      // STEP 1: LOG ACTUAL API RESPONSE - Verify exact field names and structure
+      console.log('=== RUN API RESPONSE ===');
+      console.log('Total runs:', response.data?.length);
+      if (response.data && response.data.length > 0) {
+        console.log('First run RAW data:', response.data[0]);
+        console.log('Field names:', Object.keys(response.data[0]));
+        console.log('startedAt type:', typeof response.data[0].startedAt, '=', response.data[0].startedAt);
+        console.log('finishedAt type:', typeof response.data[0].finishedAt, '=', response.data[0].finishedAt);
+        console.log('createdAt type:', typeof response.data[0].createdAt, '=', response.data[0].createdAt);
+      }
+      
       // NORMALIZE all data through dataMapper layer BEFORE rendering
       // This ensures all fields exist and are properly typed
       const normalizedRuns: ExecutionRun[] = normalizeRunList(response.data || []);
+      
+      // STEP 7: LOG NORMALIZED DATA - Verify startedAt is populated
+      console.log('=== NORMALIZED RUNS ===');
+      if (normalizedRuns.length > 0) {
+        console.log('First normalized run:', normalizedRuns[0]);
+        console.log('startedAt:', normalizedRuns[0].startedAt);
+        console.log('finishedAt:', normalizedRuns[0].finishedAt);
+      }
       
       setRuns(normalizedRuns);
       setError(null);

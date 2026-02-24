@@ -29,14 +29,23 @@ export interface NormalizedExecutionRun {
 
 /**
  * Compute duration between two date strings
+ * CRITICAL: Cannot compute if dates are human-readable strings (contain "UTC" or "at")
  * Returns safe formatted string, never undefined/NaN
  * 
- * @param start - ISO string or timestamp
- * @param end - ISO string or timestamp
- * @returns "Xm Ys" format or "-" if invalid
+ * @param start - ISO string, timestamp, or human-readable string
+ * @param end - ISO string, timestamp, or human-readable string
+ * @returns "Xm Ys" format or "-" if invalid or non-computable
  */
 export function computeDuration(start?: string | null, end?: string | null): string {
   if (!start || !end) return '-';
+
+  // STEP 3: Cannot compute duration from human-readable strings
+  if (typeof start === 'string' && (start.includes('UTC') || start.includes(' at '))) {
+    return '-';
+  }
+  if (typeof end === 'string' && (end.includes('UTC') || end.includes(' at '))) {
+    return '-';
+  }
 
   try {
     const startTime = new Date(start).getTime();
@@ -64,8 +73,10 @@ export function computeDuration(start?: string | null, end?: string | null): str
 
 /**
  * Normalize execution run from API response
- * Backend returns: startedAt, finishedAt, createdAt as ISO strings
- * No fallbacks needed - use EXACT field names
+ * STEP 4: Use EXACT backend field names - DO NOT reference wrong keys
+ * STEP 6: Use nullish coalescing (??) instead of OR (||) to avoid empty string → null
+ * 
+ * Backend returns: startedAt, finishedAt, createdAt (may be ISO OR human-readable)
  * 
  * @param run - Raw API response object
  * @returns Standardized NormalizedExecutionRun with all fields guaranteed safe
@@ -73,7 +84,7 @@ export function computeDuration(start?: string | null, end?: string | null): str
 export function normalizeRun(run: any): NormalizedExecutionRun {
   // Core identity - required fallbacks
   const id = run.id || 'unknown';
-  const name = run.name || `Execution ${id.slice(-8).toUpperCase()}`;
+  const name = run.name || run.id || `Execution ${id.slice(-8).toUpperCase()}`;
 
   // Status determination - COMPLETE MAP of all backend values
   let status: 'passed' | 'failed' | 'running' | 'pending' = 'pending';
@@ -107,18 +118,19 @@ export function normalizeRun(run: any): NormalizedExecutionRun {
   const environment = run.environment || run.env || 'Production';
   const tag = (Array.isArray(run.tags) && run.tags[0]) || run.tag || 'test';
 
-  // Timestamps - Use EXACT backend field names (now returns ISO strings)
-  // Backend stores startedAt, finishedAt, createdAt - NO FALLBACKS
-  const startedAt = run.startedAt || null;
-  const finishedAt = run.finishedAt || null;
+  // STEP 4 & 6: Use EXACT backend field names with nullish coalescing
+  // DO NOT use || operator (converts empty string to null)
+  // Support both camelCase and snake_case
+  const startedAt = run.startedAt ?? run.started_at ?? run.createdAt ?? null;
+  const finishedAt = run.finishedAt ?? run.finished_at ?? null;
 
   // Screenshot URL - handle multiple field names
-  const screenshotUrl = run.screenshotUrl || run.screenshot || null;
+  const screenshotUrl = run.screenshotUrl ?? run.screenshot ?? null;
 
   // Test metrics
-  const totalTests = run.totalTests || run.tests?.total || 0;
-  const passedTests = run.passedTests || run.tests?.passed || 0;
-  const failedTests = run.failedTests || run.tests?.failed || 0;
+  const totalTests = run.totalTests ?? run.tests?.total ?? 0;
+  const passedTests = run.passedTests ?? run.tests?.passed ?? 0;
+  const failedTests = run.failedTests ?? run.tests?.failed ?? 0;
 
   // Compute pass rate safely
   const passRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;

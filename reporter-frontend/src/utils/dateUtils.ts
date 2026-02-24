@@ -1,19 +1,32 @@
 /**
- * Safe date formatter - handles null/undefined/invalid dates
- * Uses Indian locale (en-IN) with 24-hour format
- * Format: "24 Feb, 2026 11:30"
+ * Safe date formatter - handles null/undefined/invalid dates AND human-readable strings
+ * CRITICAL: If backend sends "February 23, 2026 at 11:24:44 PM UTC+5:30" format,
+ * return it directly WITHOUT parsing - these are already formatted
  * 
- * @param value - ISO string, timestamp, or Date object
+ * @param value - ISO string, timestamp, Date object, or human-readable string
  * @returns Formatted date string or "-" if invalid
  */
 export function formatDate(value?: string | number | Date): string {
   if (!value) return '-';
 
+  // STEP 2: Handle human-readable strings with "UTC" - return as-is
+  if (typeof value === 'string' && value.includes('UTC')) {
+    return value;
+  }
+  
+  // STEP 2: Handle human-readable strings with "at" pattern - return as-is
+  if (typeof value === 'string' && value.includes(' at ')) {
+    return value;
+  }
+
   try {
     const date = new Date(value);
-    if (isNaN(date.getTime())) return '-';
+    // If parsing fails, return original value (might be pre-formatted)
+    if (isNaN(date.getTime())) {
+      return typeof value === 'string' ? value : '-';
+    }
     
-    // Use en-IN locale with custom formatting
+    // Use en-IN locale with custom formatting for ISO strings
     const datePart = date.toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'short',
@@ -28,7 +41,8 @@ export function formatDate(value?: string | number | Date): string {
     
     return `${datePart} ${timePart}`;
   } catch {
-    return '-';
+    // Last resort: return original if string, otherwise "-"
+    return typeof value === 'string' ? value : '-';
   }
 }
 
@@ -57,12 +71,22 @@ export function formatTime(value?: string | number | Date): string {
 
 /**
  * Format duration between two dates
+ * CRITICAL: If dates are human-readable strings (not ISO), cannot compute duration
+ * 
  * @param start - ISO string, timestamp, or Date object
  * @param end - ISO string, timestamp, or Date object
- * @returns Formatted duration "Xm Ys" or "-" if invalid
+ * @returns Formatted duration "Xm Ys" or "-" if invalid or non-computable
  */
 export function formatDuration(start?: string | number | Date, end?: string | number | Date): string {
   if (!start || !end) return '-';
+
+  // STEP 3: Cannot compute duration from human-readable strings
+  if (typeof start === 'string' && (start.includes('UTC') || start.includes(' at '))) {
+    return '-';
+  }
+  if (typeof end === 'string' && (end.includes('UTC') || end.includes(' at '))) {
+    return '-';
+  }
 
   try {
     const startDate = new Date(start);
