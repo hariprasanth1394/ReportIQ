@@ -1,5 +1,8 @@
 /**
  * Safe date formatter - handles null/undefined/invalid dates
+ * Uses Indian locale (en-IN) with 24-hour format
+ * Format: "24 Feb, 2026 11:30"
+ * 
  * @param value - ISO string, timestamp, or Date object
  * @returns Formatted date string or "-" if invalid
  */
@@ -10,14 +13,20 @@ export function formatDate(value?: string | number | Date): string {
     const date = new Date(value);
     if (isNaN(date.getTime())) return '-';
     
-    return date.toLocaleString('en-US', {
+    // Use en-IN locale with custom formatting
+    const datePart = date.toLocaleDateString('en-IN', {
+      day: '2-digit',
       month: 'short',
-      day: 'numeric',
       year: 'numeric',
+    });
+    
+    const timePart = date.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true,
+      hour12: false,
     });
+    
+    return `${datePart} ${timePart}`;
   } catch {
     return '-';
   }

@@ -173,15 +173,37 @@ class ExecutionStore {
             .where('testCaseId', '==', testCaseData.id)
             .get();
 
-          const steps = stepsSnapshot.docs.map(doc => doc.data()).sort((a, b) => {
+          const steps = stepsSnapshot.docs.map(doc => {
+            const stepData = doc.data();
+            return {
+              ...stepData,
+              timestamp: stepData.timestamp?.toDate?.()?.toISOString() || stepData.timestamp || null,
+              createdAt: stepData.createdAt?.toDate?.()?.toISOString() || stepData.createdAt || null,
+            };
+          }).sort((a, b) => {
             // Sort in memory instead of using orderBy
             return new Date(a.createdAt) - new Date(b.createdAt);
           });
-          return { ...testCaseData, steps };
+          
+          // Convert test case timestamps
+          return {
+            ...testCaseData,
+            startedAt: testCaseData.startedAt?.toDate?.()?.toISOString() || testCaseData.startedAt || null,
+            finishedAt: testCaseData.finishedAt?.toDate?.()?.toISOString() || testCaseData.finishedAt || null,
+            createdAt: testCaseData.createdAt?.toDate?.()?.toISOString() || testCaseData.createdAt || null,
+            steps,
+          };
         })
       );
 
-      return { ...runDoc.data(), testCases };
+      const runData = runDoc.data();
+      return {
+        ...runData,
+        startedAt: runData.startedAt?.toDate?.()?.toISOString() || runData.startedAt || null,
+        finishedAt: runData.finishedAt?.toDate?.()?.toISOString() || runData.finishedAt || null,
+        createdAt: runData.createdAt?.toDate?.()?.toISOString() || runData.createdAt || null,
+        testCases,
+      };
     } catch (error) {
       console.error('Error getting run:', error);
       throw error;
@@ -199,11 +221,26 @@ class ExecutionStore {
         .where('testCaseId', '==', testCaseId)
         .get();
 
-      const steps = stepsSnapshot.docs.map(doc => doc.data()).sort((a, b) => {
+      const steps = stepsSnapshot.docs.map(doc => {
+        const stepData = doc.data();
+        return {
+          ...stepData,
+          timestamp: stepData.timestamp?.toDate?.()?.toISOString() || stepData.timestamp || null,
+          createdAt: stepData.createdAt?.toDate?.()?.toISOString() || stepData.createdAt || null,
+        };
+      }).sort((a, b) => {
         // Sort in memory instead of using orderBy
         return new Date(a.createdAt) - new Date(b.createdAt);
       });
-      return { ...testCaseDoc.data(), steps };
+      
+      const testCaseData = testCaseDoc.data();
+      return {
+        ...testCaseData,
+        startedAt: testCaseData.startedAt?.toDate?.()?.toISOString() || testCaseData.startedAt || null,
+        finishedAt: testCaseData.finishedAt?.toDate?.()?.toISOString() || testCaseData.finishedAt || null,
+        createdAt: testCaseData.createdAt?.toDate?.()?.toISOString() || testCaseData.createdAt || null,
+        steps,
+      };
     } catch (error) {
       console.error('Error getting test case:', error);
       throw error;
@@ -218,7 +255,16 @@ class ExecutionStore {
         .limit(limit)
         .get();
 
-      return runsSnapshot.docs.map(doc => doc.data());
+      // Convert Firestore Timestamps to ISO strings
+      return runsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          startedAt: data.startedAt?.toDate?.()?.toISOString() || data.startedAt || null,
+          finishedAt: data.finishedAt?.toDate?.()?.toISOString() || data.finishedAt || null,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || null,
+        };
+      });
     } catch (error) {
       console.error('Error listing runs:', error);
       throw error;

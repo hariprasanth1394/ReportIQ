@@ -64,7 +64,8 @@ export function computeDuration(start?: string | null, end?: string | null): str
 
 /**
  * Normalize execution run from API response
- * Handles multiple field name variations and ensures all fields exist
+ * Backend returns: startedAt, finishedAt, createdAt as ISO strings
+ * No fallbacks needed - use EXACT field names
  * 
  * @param run - Raw API response object
  * @returns Standardized NormalizedExecutionRun with all fields guaranteed safe
@@ -106,10 +107,10 @@ export function normalizeRun(run: any): NormalizedExecutionRun {
   const environment = run.environment || run.env || 'Production';
   const tag = (Array.isArray(run.tags) && run.tags[0]) || run.tag || 'test';
 
-  // Timestamps - CRITICAL: handle multiple field names
-  // API might return: startTime, startedAt, createdAt, etc.
-  const startedAt = run.startedAt || run.startTime || run.createdAt || null;
-  const finishedAt = run.finishedAt || run.endTime || run.completedAt || null;
+  // Timestamps - Use EXACT backend field names (now returns ISO strings)
+  // Backend stores startedAt, finishedAt, createdAt - NO FALLBACKS
+  const startedAt = run.startedAt || null;
+  const finishedAt = run.finishedAt || null;
 
   // Screenshot URL - handle multiple field names
   const screenshotUrl = run.screenshotUrl || run.screenshot || null;

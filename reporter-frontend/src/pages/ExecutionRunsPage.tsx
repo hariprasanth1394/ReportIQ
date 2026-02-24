@@ -108,22 +108,24 @@ export function ExecutionRunsPage({ onNavigateToDetail }: ExecutionRunsPageProps
           width: '100%'
         }}
       >
-        {/* Content Wrapper with Max Width */}
+        {/* Content Wrapper with Max Width - SaaS grade 1600px */}
         <Box
           sx={{
-            maxWidth: '1400px',
+            maxWidth: '1600px',
             mx: 'auto',
             px: 4,
             py: 3,
             width: '100%'
           }}
         >
-          {/* Filter Toolbar */}
-          <FilterToolbar
-            filters={filters}
-            onFilterChange={(key, value) => setFilters(prev => ({ ...prev, [key]: value }))}
-            onSearchChange={(value) => setFilters(prev => ({ ...prev, search: value }))}
-          />
+          {/* Filter Toolbar - Full Width */}
+          <Box sx={{ mb: 3 }}>
+            <FilterToolbar
+              filters={filters}
+              onFilterChange={(key, value) => setFilters(prev => ({ ...prev, [key]: value }))}
+              onSearchChange={(value) => setFilters(prev => ({ ...prev, search: value }))}
+            />
+          </Box>
 
           {/* Selection Info Bar */}
           {selectedRuns.length > 0 && (
@@ -161,7 +163,7 @@ export function ExecutionRunsPage({ onNavigateToDetail }: ExecutionRunsPageProps
             </Box>
           )}
 
-          {/* Execution Runs Table */}
+          {/* Execution Runs Table - Full Width */}
           {loading ? (
             <Box
               sx={{
@@ -200,10 +202,12 @@ export function ExecutionRunsPage({ onNavigateToDetail }: ExecutionRunsPageProps
               No execution runs found
             </Box>
           ) : (
-            <StyledExecutionTable
-              rows={filteredRuns}
-              onRowClick={(runId) => onNavigateToDetail(runId)}
-            />
+            <Box sx={{ width: '100%' }}>
+              <StyledExecutionTable
+                rows={filteredRuns}
+                onRowClick={(runId) => onNavigateToDetail(runId)}
+              />
+            </Box>
           )}
         </Box>
       </Box>
