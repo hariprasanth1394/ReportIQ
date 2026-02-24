@@ -28,28 +28,39 @@ export interface NormalizedExecutionRun {
 }
 
 /**
- * Compute duration between two date strings
- * CRITICAL: Cannot compute if dates are human-readable strings (contain "UTC" or "at")
- * Returns safe formatted string, never undefined/NaN
+ * STEP 3 - Compute duration between two Firestore Timestamps or Dates
+ * Properly converts Timestamps using convertTimestamp before computing
  * 
- * @param start - ISO string, timestamp, or human-readable string
- * @param end - ISO string, timestamp, or human-readable string
- * @returns "Xm Ys" format or "-" if invalid or non-computable
+ * @param start - Firebase Timestamp, Date, ISO string, or null
+ * @param end - Firebase Timestamp, Date, ISO string, or null
+ * @returns "Xm Ys" format or "-" if invalid
  */
-export function computeDuration(start?: string | null, end?: string | null): string {
+export function computeDuration(start?: any, end?: any): string {
+  // Import at top: import { convertTimestamp } from './dateUtils';
+  // For now, handle Timestamp objects inline
+  
   if (!start || !end) return '-';
 
-  // STEP 3: Cannot compute duration from human-readable strings
-  if (typeof start === 'string' && (start.includes('UTC') || start.includes(' at '))) {
-    return '-';
-  }
-  if (typeof end === 'string' && (end.includes('UTC') || end.includes(' at '))) {
-    return '-';
-  }
-
   try {
-    const startTime = new Date(start).getTime();
-    const endTime = new Date(end).getTime();
+    let startTime: number;
+    let endTime: number;
+
+    // Handle Firebase Timestamp objects
+    if (typeof start === 'object' && typeof start.toDate === 'function') {
+      startTime = start.toDate().getTime();
+    } else if (start instanceof Date) {
+      startTime = start.getTime();
+    } else {
+      startTime = new Date(start).getTime();
+    }
+
+    if (typeof end === 'object' && typeof end.toDate === 'function') {
+      endTime = end.toDate().getTime();
+    } else if (end instanceof Date) {
+      endTime = end.getTime();
+    } else {
+      endTime = new Date(end).getTime();
+    }
 
     // Validate: both must be valid timestamps
     if (isNaN(startTime) || isNaN(endTime)) return '-';
@@ -73,13 +84,14 @@ export function computeDuration(start?: string | null, end?: string | null): str
 
 /**
  * Normalize execution run from API response
- * STEP 4: Use EXACT backend field names - DO NOT reference wrong keys
- * STEP 6: Use nullish coalescing (??) instead of OR (||) to avoid empty string → null
+ * STEP 4: DO NOT CONVERT Firestore Timestamps - Keep original objects
+ * Conversion happens in formatDate/computeDuration using convertTimestamp
  * 
- * Backend returns: startedAt, finishedAt, createdAt (may be ISO OR human-readable)
+ * Backend returns: startedAt, finishedAt as Firestore Timestamp objects
+ * Keep them as-is for proper handling downstream
  * 
- * @param run - Raw API response object
- * @returns Standardized NormalizedExecutionRun with all fields guaranteed safe
+ * @param run - Raw API response object with Firestore Timestamps
+ * @returns Standardized NormalizedExecutionRun with Timestamps preserved
  */
 export function normalizeRun(run: any): NormalizedExecutionRun {
   // Core identity - required fallbacks
@@ -114,17 +126,17 @@ export function normalizeRun(run: any): NormalizedExecutionRun {
   }
 
   // Metadata with safe defaults
-  const browser = run.browser || run.browserName || 'Chrome';
-  const environment = run.environment || run.env || 'Production';
-  const tag = (Array.isArray(run.tags) && run.tags[0]) || run.tag || 'test';
+  const browser = run.browser ?? 'Chrome';
+  const environment = run.environment ?? 'Production';
+  const tag = (Array.isArray(run.tags) && run.tags[0]) ?? 'test';
 
-  // STEP 4 & 6: Use EXACT backend field names with nullish coalescing
-  // DO NOT use || operator (converts empty string to null)
-  // Support both camelCase and snake_case
-  const startedAt = run.startedAt ?? run.started_at ?? run.createdAt ?? null;
-  const finishedAt = run.finishedAt ?? run.finished_at ?? null;
+  // STEP 4: Keep Firestore Timestamp objects as-is
+  // Do NOT convert here - conversion happens in formatDate/computeDuration
+  // This preserves the Timestamp.toDate() method
+  const startedAt = run.startedAt ?? null;
+  const finishedAt = run.finishedAt ?? null;
 
-  // Screenshot URL - handle multiple field names
+  // Screenshot URL
   const screenshotUrl = run.screenshotUrl ?? run.screenshot ?? null;
 
   // Test metrics

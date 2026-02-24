@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Box, CircularProgress } from '@mui/material';
 import { api } from '../api/client';
 import { normalizeRunList, NormalizedExecutionRun } from '../utils/dataMapper';
+import { convertTimestamp } from '../utils/dateUtils';
 import { usePolling } from '../hooks/usePolling';
 
 type ExecutionRun = NormalizedExecutionRun;
@@ -49,12 +50,18 @@ export function ExecutionRunsPage({ onNavigateToDetail }: ExecutionRunsPageProps
       // This ensures all fields exist and are properly typed
       const normalizedRuns: ExecutionRun[] = normalizeRunList(response.data || []);
       
-      // STEP 7: LOG NORMALIZED DATA - Verify startedAt is populated
-      console.log('=== NORMALIZED RUNS ===');
+      // VALIDATION: Log converted Timestamps
+      console.log('=== TIMESTAMP CONVERSION TEST ===');
       if (normalizedRuns.length > 0) {
-        console.log('First normalized run:', normalizedRuns[0]);
-        console.log('startedAt:', normalizedRuns[0].startedAt);
-        console.log('finishedAt:', normalizedRuns[0].finishedAt);
+        const firstRun = normalizedRuns[0];
+        console.log('Raw startedAt:', firstRun.startedAt);
+        const converted = convertTimestamp(firstRun.startedAt);
+        console.log('Converted date:', converted);
+        if (converted instanceof Date) {
+          console.log('✓ Successfully converted to Date:', converted.toLocaleString('en-IN'));
+        } else {
+          console.error('✗ Failed to convert to Date');
+        }
       }
       
       setRuns(normalizedRuns);

@@ -3,7 +3,7 @@ import { Box, Chip, Card, useTheme, useMediaQuery, Typography } from '@mui/mater
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { StatusPill } from './StatusPill';
 import { ProgressCell } from './ProgressCell';
-import { formatDate, formatRelativeTime } from '../utils/dateUtils';
+import { formatDate, formatDuration } from '../utils/dateUtils';
 import { computeDuration, NormalizedExecutionRun } from '../utils/dataMapper';
 
 interface StyledExecutionTableProps {
@@ -136,10 +136,9 @@ export function StyledExecutionTable({
       filterable: false,
       align: 'center',
       headerAlign: 'center',
-      // CRITICAL: Use valueGetter to compute duration from raw timestamps
-      // Never rely on pre-formatted values - compute on every render
+      // STEP 5: Use valueGetter to format duration from Firestore Timestamps
       valueGetter: (value, row) => {
-        return computeDuration(row.startedAt, row.finishedAt);
+        return formatDuration(row.startedAt, row.finishedAt);
       },
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>
@@ -169,7 +168,7 @@ export function StyledExecutionTable({
       filterable: false,
       align: 'right',
       headerAlign: 'right',
-      // CRITICAL: Use valueGetter to compute from raw timestamp
+      // STEP 5: Use valueGetter to format Firestore Timestamp
       valueGetter: (value, row) => {
         return formatDate(row.startedAt);
       },
@@ -188,7 +187,7 @@ export function StyledExecutionTable({
       filterable: false,
       align: 'right',
       headerAlign: 'right',
-      // CRITICAL: Use valueGetter to compute from raw timestamp
+      // STEP 5: Use valueGetter to format Firestore Timestamp
       valueGetter: (value, row) => {
         return formatDate(row.finishedAt);
       },

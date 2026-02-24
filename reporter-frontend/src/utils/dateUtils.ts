@@ -1,64 +1,76 @@
 /**
- * Safe date formatter - handles null/undefined/invalid dates AND human-readable strings
- * CRITICAL: If backend sends "February 23, 2026 at 11:24:44 PM UTC+5:30" format,
- * return it directly WITHOUT parsing - these are already formatted
+ * STEP 1 - Convert Firebase Timestamp objects to JavaScript Date
+ * Firebase Admin SDK returns Timestamp { seconds, nanoseconds }
+ * which has a toDate() method
  * 
- * @param value - ISO string, timestamp, Date object, or human-readable string
- * @returns Formatted date string or "-" if invalid
+ * Also handles ISO strings, Date objects, and timestamps
+ * 
+ * @param value - Firebase Timestamp, Date, ISO string, or timestamp
+ * @returns JavaScript Date object or null if invalid
  */
-export function formatDate(value?: string | number | Date): string {
-  if (!value) return '-';
+export function convertTimestamp(value?: any): Date | null {
+  if (!value) return null;
 
-  // STEP 2: Handle human-readable strings with "UTC" - return as-is
-  if (typeof value === 'string' && value.includes('UTC')) {
-    return value;
+  // STEP 1: Handle Firebase Timestamp objects with toDate() method
+  if (typeof value === 'object' && typeof value.toDate === 'function') {
+    try {
+      return value.toDate();
+    } catch (e) {
+      console.error('Error converting Firebase Timestamp:', e);
+      return null;
+    }
   }
-  
-  // STEP 2: Handle human-readable strings with "at" pattern - return as-is
-  if (typeof value === 'string' && value.includes(' at ')) {
-    return value;
+
+  // Handle JavaScript Date objects
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
   }
+
+  // Handle ISO strings and timestamps
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  return null;
+}
+
+/**
+ * STEP 2 - Safe date formatter using converted Timestamp
+ * Handles Firebase Timestamp objects, Date objects, ISO strings
+ * 
+ * @param value - Firebase Timestamp, Date, or ISO string
+ * @returns Formatted date string in Indian locale with 12-hour time or "-" if invalid
+ */
+export function formatDate(value?: any): string {
+  const date = convertTimestamp(value);
+  if (!date) return '-';
 
   try {
-    const date = new Date(value);
-    // If parsing fails, return original value (might be pre-formatted)
-    if (isNaN(date.getTime())) {
-      return typeof value === 'string' ? value : '-';
-    }
-    
-    // Use en-IN locale with custom formatting for ISO strings
-    const datePart = date.toLocaleDateString('en-IN', {
+    return date.toLocaleString('en-IN', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
-    });
-    
-    const timePart = date.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false,
+      hour12: true,
     });
-    
-    return `${datePart} ${timePart}`;
   } catch {
-    // Last resort: return original if string, otherwise "-"
-    return typeof value === 'string' ? value : '-';
+    return '-';
   }
 }
 
 /**
  * Safe date formatter for time only
- * @param value - ISO string, timestamp, or Date object
+ * @param value - Firebase Timestamp, Date, ISO string, or timestamp
  * @returns Formatted time string or "-" if invalid
  */
-export function formatTime(value?: string | number | Date): string {
-  if (!value) return '-';
+export function formatTime(value?: any): string {
+  const date = convertTimestamp(value);
+  if (!date) return '-';
 
   try {
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return '-';
-    
-    return date.toLocaleTimeString('en-US', {
+    return date.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
@@ -70,30 +82,20 @@ export function formatTime(value?: string | number | Date): string {
 }
 
 /**
- * Format duration between two dates
- * CRITICAL: If dates are human-readable strings (not ISO), cannot compute duration
+ * STEP 3 - Format duration between two Firestore Timestamps or Dates
+ * Properly converts Timestamps using toDate() before computing duration
  * 
- * @param start - ISO string, timestamp, or Date object
- * @param end - ISO string, timestamp, or Date object
- * @returns Formatted duration "Xm Ys" or "-" if invalid or non-computable
+ * @param start - Firebase Timestamp, Date, ISO string, or timestamp
+ * @param end - Firebase Timestamp, Date, ISO string, or timestamp
+ * @returns Formatted duration "Xm Ys" or "-" if invalid
  */
-export function formatDuration(start?: string | number | Date, end?: string | number | Date): string {
-  if (!start || !end) return '-';
+export function formatDuration(start?: any, end?: any): string {
+  const startDate = convertTimestamp(start);
+  const endDate = convertTimestamp(end);
 
-  // STEP 3: Cannot compute duration from human-readable strings
-  if (typeof start === 'string' && (start.includes('UTC') || start.includes(' at '))) {
-    return '-';
-  }
-  if (typeof end === 'string' && (end.includes('UTC') || end.includes(' at '))) {
-    return '-';
-  }
+  if (!startDate || !endDate) return '-';
 
   try {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return '-';
-
     const diff = endDate.getTime() - startDate.getTime();
     if (diff <= 0) return '-';
 
