@@ -7,7 +7,8 @@
 export interface NormalizedExecutionRun {
   // Core identity
   id: string;
-  name: string;
+  runId: string;
+  suiteName: string;
   
   // Status & metadata
   status: 'passed' | 'failed' | 'running' | 'pending';
@@ -96,8 +97,8 @@ export function computeDuration(start?: any, end?: any): string {
 export function normalizeRun(run: any): NormalizedExecutionRun {
   // Core identity - required fallbacks
   const id = run.id || 'unknown';
-  // Display name: use custom name or fallback to the short ID (now RUN123ABC format)
-  const name = run.name || id;
+  const runId = run.runId || run.publicId || id;
+  const suiteName = run.suiteName || run.name || 'Execution Suite';
 
   // Status determination - COMPLETE MAP of all backend values
   let status: 'passed' | 'failed' | 'running' | 'pending' = 'pending';
@@ -150,7 +151,8 @@ export function normalizeRun(run: any): NormalizedExecutionRun {
 
   return {
     id,
-    name,
+    runId,
+    suiteName,
     status,
     browser,
     environment,

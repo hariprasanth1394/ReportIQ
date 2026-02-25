@@ -5,14 +5,15 @@ const RUNS_COLLECTION = 'executionRuns';
 const TEST_CASES_COLLECTION = 'testCases';
 const STEPS_COLLECTION = 'steps';
 
-/**
- * Generate a short 6-digit alphanumeric ID (SaaS-style)
- * Format: RUN123ABC, TC4D5E6F, STEP7G8H
- * More user-friendly than full UUIDs
- * 
- * @param {string} prefix - Prefix for the ID (e.g., 'RUN', 'TC', 'STEP')
- * @returns {string} - Short ID like "RUN123ABC"
- */
+function generateRunId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 7; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 function generateShortId(prefix = '') {
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let id = '';
@@ -23,16 +24,37 @@ function generateShortId(prefix = '') {
 }
 
 class ExecutionStore {
+  async resolveRunDocId(runIdentifier) {
+    const byDocId = await db.collection(RUNS_COLLECTION).doc(runIdentifier).get();
+    if (byDocId.exists) {
+      return byDocId.id;
+    }
+
+    const byRunId = await db
+      .collection(RUNS_COLLECTION)
+      .where('runId', '==', runIdentifier)
+      .limit(1)
+      .get();
+
+    if (byRunId.empty) {
+      return null;
+    }
+
+    return byRunId.docs[0].id;
+  }
+
   // Start a new execution run (batch of tests)
-  async startRun({ runId, browser, tags }) {
+  async startRun({ runId, browser, tags, suiteName, environment }) {
     try {
-      // Use provided runId or generate short SaaS-style ID
-      const id = runId || generateShortId('RUN');
+      const id = runId || uuidv4();
       const record = {
         id,
+        runId: generateRunId(),
+        suiteName: suiteName || 'Execution Suite',
         browser,
+        environment: environment || 'Production',
         tags: tags || [],
-        status: 'RUNNING',
+        status: 'PASS',
         startedAt: new Date(),
         finishedAt: null,
         totalTests: 0,
@@ -50,16 +72,19 @@ class ExecutionStore {
   }
 
   // Start a test case within an execution run
-  async startTestCase(runId, { testCaseId, testName }) {
+  async startTestCase(runIdentifier, { testCaseId, testName }) {
     try {
-      const run = await db.collection(RUNS_COLLECTION).doc(runId).get();
+      const resolvedRunId = await this.resolveRunDocId(runIdentifier);
+      if (!resolvedRunId) return null;
+
+      const run = await db.collection(RUNS_COLLECTION).doc(resolvedRunId).get();
       if (!run.exists) return null;
 
       // Use provided testCaseId or generate short SaaS-style ID
       const testCaseId_ = testCaseId || generateShortId('TC');
       const testCase = {
         id: testCaseId_,
-        runId,
+        runId: resolvedRunId,
         name: testName,
         status: 'RUNNING',
         startedAt: new Date(),
@@ -73,7 +98,7 @@ class ExecutionStore {
       
       // Update run total tests count
       const runData = run.data();
-      await db.collection(RUNS_COLLECTION).doc(runId).update({
+      await db.collection(RUNS_COLLECTION).doc(resolvedRunId).update({
         totalTests: (runData.totalTests || 0) + 1,
       });
       
@@ -85,17 +110,20 @@ class ExecutionStore {
   }
 
   // Append a step to a test case
-  async appendStep(runId, testCaseId, { stepName, status, screenshot, error }) {
+  async appendStep(runIdentifier, testCaseId, { stepName, status, screenshot, error }) {
     try {
+      const resolvedRunId = await this.resolveRunDocId(runIdentifier);
+      if (!resolvedRunId) return null;
+
       const testCaseDoc = await db.collection(TEST_CASES_COLLECTION).doc(testCaseId).get();
       if (!testCaseDoc.exists) return null;
 // Generate short SaaS-style ID for steps
-      const stepId = generateShortId('STEP'
-      const stepId = uuidv4();
+      const stepId = generateShortId('STEP');
+      // const stepId = uuidv4();
       const step = {
         id: stepId,
         testCaseId,
-        runId,
+        runId: resolvedRunId,
         stepName,
         status,
         screenshot: screenshot || null,
@@ -123,8 +151,11 @@ class ExecutionStore {
   }
 
   // Finish a test case
-  async finishTestCase(runId, testCaseId, status) {
+  async finishTestCase(runIdentifier, testCaseId, status) {
     try {
+      const resolvedRunId = await this.resolveRunDocId(runIdentifier);
+      if (!resolvedRunId) return null;
+
       const testCaseDoc = await db.collection(TEST_CASES_COLLECTION).doc(testCaseId).get();
       if (!testCaseDoc.exists) return null;
 
@@ -135,7 +166,7 @@ class ExecutionStore {
       });
 
       // Update run stats
-      const runDoc = await db.collection(RUNS_COLLECTION).doc(runId).get();
+      const runDoc = await db.collection(RUNS_COLLECTION).doc(resolvedRunId).get();
       const runData = runDoc.data();
       
       const updateData = {};
@@ -145,7 +176,7 @@ class ExecutionStore {
         updateData.failedTests = (runData.failedTests || 0) + 1;
       }
 
-      await db.collection(RUNS_COLLECTION).doc(runId).update(updateData);
+      await db.collection(RUNS_COLLECTION).doc(resolvedRunId).update(updateData);
       
       return testCaseDoc.data();
     } catch (error) {
@@ -155,13 +186,19 @@ class ExecutionStore {
   }
 
   // Finish the execution run
-  async finishRun(runId, status) {
+  async finishRun(runIdentifier, status) {
     try {
-      const runDoc = await db.collection(RUNS_COLLECTION).doc(runId).get();
+      const resolvedRunId = await this.resolveRunDocId(runIdentifier);
+      if (!resolvedRunId) return null;
+
+      const runDoc = await db.collection(RUNS_COLLECTION).doc(resolvedRunId).get();
       if (!runDoc.exists) return null;
 
-      const finalStatus = status || 'PASS';
-      await db.collection(RUNS_COLLECTION).doc(runId).update({
+      const runData = runDoc.data();
+      const passedTests = Number(runData.passedTests || 0);
+      const failedTests = Number(runData.failedTests || 0);
+      const finalStatus = status || (failedTests > 0 ? 'FAIL' : 'PASS');
+      await db.collection(RUNS_COLLECTION).doc(resolvedRunId).update({
         status: finalStatus,
         finishedAt: new Date(),
       });
@@ -174,14 +211,17 @@ class ExecutionStore {
   }
 
   // Get a single run
-  async getRun(runId) {
+  async getRun(runIdentifier) {
     try {
-      const runDoc = await db.collection(RUNS_COLLECTION).doc(runId).get();
+      const resolvedRunId = await this.resolveRunDocId(runIdentifier);
+      if (!resolvedRunId) return null;
+
+      const runDoc = await db.collection(RUNS_COLLECTION).doc(resolvedRunId).get();
       if (!runDoc.exists) return null;
 
       // Fetch all test cases for this run
       const testCasesSnapshot = await db.collection(TEST_CASES_COLLECTION)
-        .where('runId', '==', runId)
+        .where('runId', '==', resolvedRunId)
         .get();
 
       const testCases = await Promise.all(

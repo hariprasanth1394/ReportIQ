@@ -33,7 +33,7 @@ function PrivateRoute({ children, roles }) {
   return children;
 }
 
-const drawerWidthExpanded = 190;
+const drawerWidthExpanded = 260;
 
 function ExecutionRunsRoute() {
   const navigate = useNavigate();
@@ -241,17 +241,18 @@ export default function App() {
     <AuthProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', height: '100vh' }}>
           <Sidebar />
           <Box
             component="main"
             sx={{
-              flexGrow: 1,
-              bgcolor: '#F4F6F8',
-              minHeight: '100vh',
+              flex: 1,
+              overflow: 'auto',
+              background: '#F9FAFB',
+              p: 4,
             }}
           >
-            <Container maxWidth={false} sx={{ py: 0, px: { xs: 0, sm: 0 } }}>
+            <Container maxWidth={false} sx={{ maxWidth: 1600, mx: 'auto', py: 0, px: 0 }}>
               <Suspense
                 fallback={(
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>

@@ -5,11 +5,11 @@ const router = express.Router();
 
 // Start a new execution run
 router.post('/runs/start', async (req, res) => {
-  const { runId, browser, tags } = req.body || {};
+  const { runId, browser, tags, suiteName, environment } = req.body || {};
   if (!browser) {
     return res.status(400).json({ message: 'browser is required' });
   }
-  const record = await executionStore.startRun({ runId, browser, tags });
+  const record = await executionStore.startRun({ runId, browser, tags, suiteName, environment });
   return res.status(201).json(record);
 });
 

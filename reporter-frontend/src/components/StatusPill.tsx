@@ -12,13 +12,13 @@ const statusConfig: Record<StatusType, { bg: string; color: string; label: strin
   passed: {
     bg: '#ECFDF5',
     color: '#065F46',
-    label: 'Passed',
+    label: 'PASSED',
     Icon: CheckCircle2
   },
   failed: {
     bg: '#FEF2F2',
     color: '#991B1B',
-    label: 'Failed',
+    label: 'FAILED',
     Icon: XCircle
   },
   running: {
@@ -51,7 +51,7 @@ export function StatusPill({ status }: StatusPillProps) {
         backgroundColor: config.bg,
         color: config.color,
         fontSize: '12px',
-        fontWeight: 500,
+        fontWeight: 600,
         lineHeight: 1,
         whiteSpace: 'nowrap'
       }}

@@ -98,7 +98,8 @@ export function ExecutionRunsPage({ onNavigateToDetail }: ExecutionRunsPageProps
     return runs.filter((run) => {
       const matchesSearch =
         !search ||
-        run.name.toLowerCase().includes(search) ||
+        run.suiteName.toLowerCase().includes(search) ||
+        run.runId.toLowerCase().includes(search) ||
         run.id.toLowerCase().includes(search);
       const matchesStatus = filters.status === 'all' || run.status === filters.status;
       const matchesBrowser = filters.browser === 'all' || run.browser.toLowerCase() === filters.browser;
