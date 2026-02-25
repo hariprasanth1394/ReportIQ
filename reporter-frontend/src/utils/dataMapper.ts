@@ -14,7 +14,7 @@ export interface NormalizedExecutionRun {
   status: 'passed' | 'failed' | 'running' | 'pending';
   browser: string;
   environment: string;
-  tag: string;
+  tag: string[];
   
   // Timestamps (RAW - for computation)
   startedAt: string | null;
@@ -130,7 +130,11 @@ export function normalizeRun(run: any): NormalizedExecutionRun {
   // Metadata with safe defaults
   const browser = run.browser ?? 'Chrome';
   const environment = run.environment ?? 'Production';
-  const tag = (Array.isArray(run.tags) && run.tags[0]) ?? 'test';
+  const tag = Array.isArray(run.tags)
+    ? run.tags.filter(Boolean)
+    : run.tags
+      ? [String(run.tags)]
+      : ['default'];
 
   // STEP 4: Keep Firestore Timestamp objects as-is
   // Do NOT convert here - conversion happens in formatDate/computeDuration

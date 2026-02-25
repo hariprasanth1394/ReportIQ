@@ -10,6 +10,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ReporterClient {
@@ -75,10 +76,11 @@ public class ReporterClient {
         post("/api/executions/runs/start", body);
     }
 
-    public void startTestCase(String runId, String testCaseId, String testName) {
+    public void startTestCase(String runId, String testCaseId, String testName, List<String> tags) {
         Map<String, Object> body = new HashMap<>();
         body.put("testCaseId", testCaseId);
         body.put("testName", testName);
+        body.put("tags", tags);
         post("/api/executions/runs/" + runId + "/test-cases/start", body);
     }
 

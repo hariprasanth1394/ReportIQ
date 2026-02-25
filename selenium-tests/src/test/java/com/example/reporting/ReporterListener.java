@@ -6,6 +6,8 @@ import org.testng.ITestResult;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 public class ReporterListener implements ITestListener {
@@ -16,11 +18,15 @@ public class ReporterListener implements ITestListener {
         ReporterClient client = (ReporterClient) ctx.getAttribute("reporterClient");
         String runId = (String) ctx.getAttribute("runId");
         String testName = result.getMethod().getMethodName();
+        String[] groups = result.getMethod().getGroups();
+        List<String> tags = groups != null && groups.length > 0 ? Arrays.asList(groups) : List.of("default");
+        System.out.println("Test Groups: " + Arrays.toString(groups));
         String testCaseId = UUID.randomUUID().toString();
         ctx.setAttribute("testCaseId", testCaseId);
+        ctx.setAttribute("testTags", tags);
         System.out.println("[ReporterListener] onTestStart: runId=" + runId + ", testName=" + testName + ", testCaseId=" + testCaseId);
         if (client != null && runId != null) {
-            client.startTestCase(runId, testCaseId, testName);
+            client.startTestCase(runId, testCaseId, testName, tags);
         } else {
             System.err.println("[ReporterListener] onTestStart: Missing client or runId! runId=" + runId);
         }

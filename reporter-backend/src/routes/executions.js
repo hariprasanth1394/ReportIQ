@@ -16,11 +16,11 @@ router.post('/runs/start', async (req, res) => {
 // Start a test case within a run
 router.post('/runs/:runId/test-cases/start', async (req, res) => {
   const { runId } = req.params;
-  const { testCaseId, testName } = req.body || {};
+  const { testCaseId, testName, tags } = req.body || {};
   if (!testName) {
     return res.status(400).json({ message: 'testName is required' });
   }
-  const testCase = await executionStore.startTestCase(runId, { testCaseId, testName });
+  const testCase = await executionStore.startTestCase(runId, { testCaseId, testName, tags });
   if (!testCase) return res.status(404).json({ message: 'Run not found' });
   return res.status(201).json(testCase);
 });

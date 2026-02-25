@@ -103,9 +103,8 @@ public abstract class BaseTest {
             if (sharedRunId == null) {
                 sharedRunId = UUID.randomUUID().toString();
                 if (reporterClient != null) {
-                    // Extract tags from suite or test
-                    String tags = System.getProperty("test.tags", "P1,Smoke");
-                    String[] tagArray = tags.split(",");
+                    String tags = System.getProperty("test.tags", "");
+                    String[] tagArray = tags.isBlank() ? new String[0] : tags.split(",");
                     reporterClient.startRunWithTags(sharedRunId, browser, tagArray);
                     System.out.println("[BaseTest] setUp: Generated and started sharedRunId=" + sharedRunId + " with tags=" + tags);
                 }

@@ -103,7 +103,9 @@ export function ExecutionRunsPage({ onNavigateToDetail }: ExecutionRunsPageProps
         run.id.toLowerCase().includes(search);
       const matchesStatus = filters.status === 'all' || run.status === filters.status;
       const matchesBrowser = filters.browser === 'all' || run.browser.toLowerCase() === filters.browser;
-      const matchesTag = filters.tag === 'all' || run.tag === filters.tag;
+      const matchesTag =
+        filters.tag === 'all' ||
+        run.tag.some((tag) => tag.toLowerCase() === filters.tag.toLowerCase());
       const matchesEnvironment =
         filters.environment === 'all' || run.environment.toLowerCase() === filters.environment;
 

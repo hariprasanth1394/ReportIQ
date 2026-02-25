@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, Link, Typography } from '@mui/material';
+import { Box, Card, Chip, CircularProgress, Link, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { StatusPill } from './StatusPill';
 import { ProgressCell } from './ProgressCell';
@@ -84,9 +84,24 @@ export function StyledExecutionTable({
       filterable: false,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params: GridRenderCellParams) => (
-        <StatusPill status={params.row.status} />
-      ),
+      renderCell: (params: GridRenderCellParams) => {
+        if (params.row.status === 'running') {
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress
+                size={14}
+                thickness={5}
+                sx={{ color: '#6366F1' }}
+              />
+              <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>
+                Running
+              </Typography>
+            </Box>
+          );
+        }
+
+        return <StatusPill status={params.row.status} />;
+      },
     },
     {
       field: 'browser',
@@ -124,7 +139,20 @@ export function StyledExecutionTable({
       align: 'left',
       headerAlign: 'left',
       renderCell: (params: GridRenderCellParams) => (
-        <Box sx={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>{params.row.tag || '-'}</Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          {(params.value || []).map((tag: string, index: number) => (
+            <Chip
+              key={`${tag}-${index}`}
+              label={tag}
+              size="small"
+              sx={{
+                backgroundColor: '#EEF2FF',
+                color: '#3730A3',
+                fontWeight: 500,
+              }}
+            />
+          ))}
+        </Box>
       ),
     },
     {

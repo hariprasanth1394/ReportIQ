@@ -72,13 +72,14 @@ class ExecutionStore {
   }
 
   // Start a test case within an execution run
-  async startTestCase(runIdentifier, { testCaseId, testName }) {
+  async startTestCase(runIdentifier, { testCaseId, testName, tags }) {
     try {
       const resolvedRunId = await this.resolveRunDocId(runIdentifier);
       if (!resolvedRunId) return null;
 
       const run = await db.collection(RUNS_COLLECTION).doc(resolvedRunId).get();
       if (!run.exists) return null;
+      const normalizedTags = Array.isArray(tags) && tags.length > 0 ? tags : ['default'];
 
       // Use provided testCaseId or generate short SaaS-style ID
       const testCaseId_ = testCaseId || generateShortId('TC');
@@ -86,6 +87,7 @@ class ExecutionStore {
         id: testCaseId_,
         runId: resolvedRunId,
         name: testName,
+        tags: normalizedTags,
         status: 'RUNNING',
         startedAt: new Date(),
         finishedAt: null,
@@ -98,8 +100,10 @@ class ExecutionStore {
       
       // Update run total tests count
       const runData = run.data();
+      const mergedTags = Array.from(new Set([...(runData.tags || []), ...normalizedTags]));
       await db.collection(RUNS_COLLECTION).doc(resolvedRunId).update({
         totalTests: (runData.totalTests || 0) + 1,
+        tags: mergedTags,
       });
       
       return testCase;
