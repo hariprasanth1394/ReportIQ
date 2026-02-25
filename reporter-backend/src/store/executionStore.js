@@ -54,7 +54,7 @@ class ExecutionStore {
         browser,
         environment: environment || 'Production',
         tags: tags || [],
-        status: 'PASS',
+        status: 'RUNNING',
         startedAt: new Date(),
         finishedAt: null,
         totalTests: 0,

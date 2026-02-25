@@ -107,9 +107,9 @@ public class ReporterClient {
         post("/api/executions/runs/" + runId + "/test-cases/" + testCaseId + "/finish", body);
     }
 
-    public void finishRun(String runId) {
+    public void finishRun(String runId, String status) {
         Map<String, Object> body = new HashMap<>();
-        body.put("status", "PASS");
+        body.put("status", status);
         post("/api/executions/runs/" + runId + "/finish", body);
     }
 }

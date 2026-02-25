@@ -9,8 +9,20 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReporterListener implements ITestListener {
+    private final AtomicInteger passedCount = new AtomicInteger(0);
+    private final AtomicInteger failedCount = new AtomicInteger(0);
+    private final AtomicInteger totalCount = new AtomicInteger(0);
+
+    @Override
+    public void onStart(ITestContext context) {
+        passedCount.set(0);
+        failedCount.set(0);
+        totalCount.set(0);
+        System.out.println("Execution started - RUNNING");
+    }
 
     @Override
     public void onTestStart(ITestResult result) {
@@ -21,6 +33,7 @@ public class ReporterListener implements ITestListener {
         String[] groups = result.getMethod().getGroups();
         List<String> tags = groups != null && groups.length > 0 ? Arrays.asList(groups) : List.of("default");
         System.out.println("Test Groups: " + Arrays.toString(groups));
+        totalCount.incrementAndGet();
         String testCaseId = UUID.randomUUID().toString();
         ctx.setAttribute("testCaseId", testCaseId);
         ctx.setAttribute("testTags", tags);
@@ -38,6 +51,7 @@ public class ReporterListener implements ITestListener {
         ReporterClient client = (ReporterClient) ctx.getAttribute("reporterClient");
         String runId = (String) ctx.getAttribute("runId");
         String testCaseId = (String) ctx.getAttribute("testCaseId");
+        passedCount.incrementAndGet();
         System.out.println("[ReporterListener] onTestSuccess: runId=" + runId + ", testCaseId=" + testCaseId);
         if (client != null && runId != null && testCaseId != null) {
             client.finishTestCase(runId, testCaseId, "PASS");
@@ -50,6 +64,7 @@ public class ReporterListener implements ITestListener {
         ReporterClient client = (ReporterClient) ctx.getAttribute("reporterClient");
         String runId = (String) ctx.getAttribute("runId");
         String testCaseId = (String) ctx.getAttribute("testCaseId");
+        failedCount.incrementAndGet();
         Object driverObj = ctx.getAttribute("driver");
         String screenshot = null;
         if (driverObj instanceof org.openqa.selenium.TakesScreenshot) {
@@ -85,8 +100,10 @@ public class ReporterListener implements ITestListener {
         ReporterClient client = (ReporterClient) context.getAttribute("reporterClient");
         String runId = (String) context.getAttribute("runId");
         if (client != null && runId != null) {
+            String finalStatus = failedCount.get() > 0 ? "FAILED" : "PASSED";
             System.out.println("[ReporterListener] onFinish: finishing runId=" + runId);
-            client.finishRun(runId);
+            System.out.println("Execution finished - " + finalStatus);
+            client.finishRun(runId, finalStatus);
         }
     }
 }
