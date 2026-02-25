@@ -7,7 +7,6 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
 import org.testng.ITestContext;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -66,7 +65,14 @@ public abstract class BaseTest {
     @Parameters({"browser"})
     @BeforeMethod(alwaysRun = true)
     public void setUp(@Optional("chrome") String browser, ITestContext context) {
-        this.driver = createDriver(browser);
+        if (browser != null && browser.equalsIgnoreCase("chrome")) {
+            this.driver = new ChromeDriver();
+        } else if (browser != null && browser.equalsIgnoreCase("edge")) {
+            this.driver = new EdgeDriver();
+        } else {
+            this.driver = new ChromeDriver();
+        }
+        this.driver.manage().window().maximize();
         driverThread.set(this.driver);
         
         this.executionId = UUID.randomUUID().toString();
@@ -124,17 +130,6 @@ public abstract class BaseTest {
         driverThread.remove();
         reporterClientThread.remove();
         executionIdThread.remove();
-    }
-
-    protected WebDriver createDriver(String browser) {
-        switch (browser.toLowerCase()) {
-            case "firefox":
-                return new FirefoxDriver();
-            case "edge":
-                return new EdgeDriver();
-            default:
-                return new ChromeDriver();
-        }
     }
 
     protected String captureScreenshotBase64() {

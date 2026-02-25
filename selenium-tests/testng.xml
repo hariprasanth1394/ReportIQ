@@ -4,18 +4,37 @@
   <listeners>
     <listener class-name="com.example.reporting.ReporterListener" />
   </listeners>
-  <test name="ExternalApps">
+
+  <!--
+    Group-filter mode:
+    To run only smoke, change include value to "smoke".
+    For all grouped tests, keep ".*".
+  -->
+  <test name="ChromeSuites">
     <parameter name="browser" value="chrome" />
+    <groups>
+      <run>
+        <include name=".*" />
+      </run>
+    </groups>
     <classes>
-      <class name="com.example.tests.SampleTests">
-        <methods>
-          <include name="successfulLoginShowsSecureArea"/>
-          <include name="invalidLoginShowsError"/>
-          <include name="checkboxCanBeToggled"/>
-          <include name="dropdownSelectsCorrectOption"/>
-          <include name="dynamicLoadingWaitsForElement"/>
-        </methods>
-      </class>
+      <class name="com.example.tests.LoginSmokeSuite" />
+      <class name="com.example.tests.InvalidLoginNegativeSuite" />
+      <class name="com.example.tests.FlakyCheckoutSuite" />
+      <class name="com.example.tests.LongRunningSuite" />
+      <class name="com.example.tests.SampleTests" />
+    </classes>
+  </test>
+
+  <test name="EdgeSuites">
+    <parameter name="browser" value="edge" />
+    <groups>
+      <run>
+        <include name=".*" />
+      </run>
+    </groups>
+    <classes>
+      <class name="com.example.tests.EdgeOnlySuite" />
     </classes>
   </test>
 </suite>
